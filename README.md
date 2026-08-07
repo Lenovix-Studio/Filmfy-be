@@ -1,6 +1,8 @@
+PRISMA COMMAND;
+npx prisma db pull
+npx prisma generate
+
 MVP Backend
 | Module    | Fungsi                                |
 | --------- | ------------------------------------- |
-| `movies`  | CRUD metadata film                    |
-| `uploads` | Upload cover & video dengan streaming |
 | `genres`  | Master genre                          |

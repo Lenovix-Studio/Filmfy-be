@@ -19,8 +19,16 @@ const normalizeStringArray = (value: any): string[] => {
   return [];
 };
 
+const normalizeString = (value: any): string | any => {
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase();
+  }
+  return value;
+};
+
 export class CreateMovieDto {
-  @ApiProperty({ example: 'MOV-2026-001', description: 'Kode unik film' })
+  @ApiProperty({ example: 'mov-2026-001', description: 'Kode unik film' })
+  @Transform(({ value }) => normalizeString(value))
   @IsString()
   code!: string;
 
@@ -28,23 +36,27 @@ export class CreateMovieDto {
   @IsString()
   title!: string;
 
-  @ApiPropertyOptional({ example: 'Christopher Nolan' })
+  @ApiPropertyOptional({ example: 'christopher nolan' })
   @IsOptional()
+  @Transform(({ value }) => normalizeString(value))
   @IsString()
   director?: string;
 
-  @ApiPropertyOptional({ example: 'Warner Bros.' })
+  @ApiPropertyOptional({ example: 'warner bros.' })
   @IsOptional()
+  @Transform(({ value }) => normalizeString(value))
   @IsString()
   studio?: string;
 
-  @ApiPropertyOptional({ example: 'Syncopy' })
+  @ApiPropertyOptional({ example: 'syncopy' })
   @IsOptional()
+  @Transform(({ value }) => normalizeString(value))
   @IsString()
   label?: string;
 
-  @ApiPropertyOptional({ example: 'Inception Series' })
+  @ApiPropertyOptional({ example: 'inception series' })
   @IsOptional()
+  @Transform(({ value }) => normalizeString(value))
   @IsString()
   series?: string;
 
