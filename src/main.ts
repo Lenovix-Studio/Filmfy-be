@@ -1,72 +1,44 @@
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyMultipart from '@fastify/multipart';
-import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
-      logger: true,
+      bodyLimit: 10 * 1024 * 1024 * 1024,
     }),
   );
+
+  app.enableCors({
+    origin: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
 
   await app.register(fastifyMultipart as any, {
     limits: {
-      fileSize: 10 * 1024 * 1024,
+      fileSize: 10 * 1024 * 1024 * 1024,
+      files: 2,
     },
-  });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
-
-  app.setGlobalPrefix('api');
-  app.enableCors({
-    origin: true,
-    credentials: true,
   });
 
   const config = new DocumentBuilder()
     .setTitle('Filmfy API')
-    .setDescription('Dokumentasi Backend API untuk Platform Filmfy')
+    .setDescription('API Dokumentasi Manajemen Film')
     .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Masukkan JWT token',
-        in: 'header',
-      },
-      'JWT-auth',
-    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port, '0.0.0.0');
-
-  const serverUrl = await app.getUrl();
-  logger.log(`🚀 Aplikasi Filmfy berjalan di: ${serverUrl}`);
-  logger.log(`📚 Dokumentasi Swagger tersedia di: ${serverUrl}/docs`);
+  await app.listen(3001, '0.0.0.0');
+  console.log(`Application is running on: http://localhost:3001/docs`);
 }
-
 bootstrap();

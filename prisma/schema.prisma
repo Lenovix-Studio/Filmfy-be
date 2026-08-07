@@ -1,13 +1,186 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+model Movies {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String           @unique @db.VarChar(50)
+  title           String           @db.VarChar(255)
+  original_title  String?          @db.VarChar(255)
+  overview        String?
+  release_date    DateTime?        @db.Date
+  runtime_minutes Int?
+  language        String?          @db.VarChar(30)
+  country         String?          @db.VarChar(100)
+  tmdb_id         Int?
+  imdb_id         String?          @db.VarChar(30)
+  created_at      DateTime         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime         @default(now()) @updatedAt @db.Timestamp(6)
+  images          Images[]
+  movie_casts     MovieCasts[]
+  movie_directors MovieDirectors[]
+  movie_files     MovieFiles[]
+  movie_genres    MovieGenres[]
+  movie_labels    MovieLabels[]
+  movie_series    MovieSeries[]
+  movie_studios   MovieStudios[]
+  movie_tags      MovieTags[]
+
+  @@map("movies")
+}
+
+model Casts {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String       @db.VarChar(255)
+  movie_casts MovieCasts[]
+
+  @@map("casts")
+}
+
+model Directors {
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String           @db.VarChar(255)
+  movie_directors MovieDirectors[]
+
+  @@map("directors")
+}
+
+model Genres {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String        @unique @db.VarChar(100)
+  movie_genres MovieGenres[]
+
+  @@map("genres")
+}
+
+model Labels {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String        @unique @db.VarChar(255)
+  movie_labels MovieLabels[]
+
+  @@map("labels")
+}
+
+model Series {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String        @unique @db.VarChar(255)
+  movie_series MovieSeries[]
+
+  @@map("series")
+}
+
+model Studios {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String         @unique @db.VarChar(255)
+  movie_studios MovieStudios[]
+
+  @@map("studios")
+}
+
+model Tags {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String      @unique @db.VarChar(100)
+  movie_tags MovieTags[]
+
+  @@map("tags")
+}
+
+model Images {
+  id         String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  movie_id   String @db.Uuid
+  image_type String @db.VarChar(20)
+  file_path  String
+  movie      Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("images")
+}
+
+model MovieFiles {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  movie_id         String    @db.Uuid
+  file_path        String
+  resolution       String?   @db.VarChar(20)
+  video_codec      String?   @db.VarChar(50)
+  audio_codec      String?   @db.VarChar(50)
+  duration_seconds Int?
+  file_size        BigInt?
+  checksum         String?   @db.VarChar(64)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  movie            Movies    @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("movie_files")
+}
+
+model MovieCasts {
+  movie_id String @db.Uuid
+  cast_id  String @db.Uuid
+  cast     Casts  @relation(fields: [cast_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  movie    Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, cast_id])
+  @@map("movie_casts")
+}
+
+model MovieDirectors {
+  movie_id    String    @db.Uuid
+  director_id String    @db.Uuid
+  director    Directors @relation(fields: [director_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  movie       Movies    @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, director_id])
+  @@map("movie_directors")
+}
+
+model MovieGenres {
+  movie_id String @db.Uuid
+  genre_id String @db.Uuid
+  genre    Genres @relation(fields: [genre_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  movie    Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, genre_id])
+  @@map("movie_genres")
+}
+
+model MovieLabels {
+  movie_id String @db.Uuid
+  label_id String @db.Uuid
+  label    Labels @relation(fields: [label_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  movie    Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, label_id])
+  @@map("movie_labels")
+}
+
+model MovieSeries {
+  movie_id  String @db.Uuid
+  series_id String @db.Uuid
+  movie     Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  series    Series @relation(fields: [series_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, series_id])
+  @@map("movie_series")
+}
+
+model MovieStudios {
+  movie_id  String  @db.Uuid
+  studio_id String  @db.Uuid
+  movie     Movies  @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  studio    Studios @relation(fields: [studio_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, studio_id])
+  @@map("movie_studios")
+}
+
+model MovieTags {
+  movie_id String @db.Uuid
+  tag_id   String @db.Uuid
+  movie    Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tag      Tags   @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([movie_id, tag_id])
+  @@map("movie_tags")
 }
