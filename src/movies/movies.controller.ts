@@ -62,11 +62,6 @@ export class MoviesController {
           items: { type: 'string' },
           example: ['Leonardo DiCaprio', 'Elliot Page'],
         },
-        tag: {
-          type: 'array',
-          items: { type: 'string' },
-          example: ['Must Watch', '4K'],
-        },
       },
     },
   })

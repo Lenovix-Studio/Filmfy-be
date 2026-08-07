@@ -28,7 +28,6 @@ model Movies {
   movie_labels    MovieLabels[]
   movie_series    MovieSeries[]
   movie_studios   MovieStudios[]
-  movie_tags      MovieTags[]
 
   @@map("movies")
 }
@@ -79,14 +78,6 @@ model Studios {
   movie_studios MovieStudios[]
 
   @@map("studios")
-}
-
-model Tags {
-  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name       String      @unique @db.VarChar(100)
-  movie_tags MovieTags[]
-
-  @@map("tags")
 }
 
 model Images {
@@ -173,14 +164,4 @@ model MovieStudios {
 
   @@id([movie_id, studio_id])
   @@map("movie_studios")
-}
-
-model MovieTags {
-  movie_id String @db.Uuid
-  tag_id   String @db.Uuid
-  movie    Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tag      Tags   @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([movie_id, tag_id])
-  @@map("movie_tags")
 }

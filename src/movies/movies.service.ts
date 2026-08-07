@@ -86,7 +86,6 @@ export class MoviesService {
         'genre_id',
       );
       await handleMasterRelation(dto.cast, tx.casts, tx.movieCasts, 'cast_id');
-      await handleMasterRelation(dto.tag, tx.tags, tx.movieTags, 'tag_id');
 
       await tx.images.create({
         data: {
@@ -116,7 +115,6 @@ export class MoviesService {
           "movies",
           "genres",
           "casts",
-          "tags",
           "directors",
           "studios",
           "labels",
@@ -125,7 +123,6 @@ export class MoviesService {
           "movie_files",
           "movie_genres",
           "movie_casts",
-          "movie_tags",
           "movie_directors",
           "movie_studios",
           "movie_labels",

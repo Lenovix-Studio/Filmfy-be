@@ -62,10 +62,4 @@ export class CreateMovieDto {
   @Transform(({ value }) => normalizeStringArray(value))
   @IsArray()
   cast?: string[];
-
-  @ApiPropertyOptional({ example: ['must watch', '4k'], type: [String] })
-  @IsOptional()
-  @Transform(({ value }) => normalizeStringArray(value))
-  @IsArray()
-  tag?: string[];
 }
