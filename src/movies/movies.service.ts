@@ -8,20 +8,70 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMovieDto } from './dto/create-movie.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MoviesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private getAbsolutePath(relativePath: string): string {
+    if (!relativePath) return '';
+
+    if (/^[a-zA-Z]:\\/.test(relativePath)) {
+      return relativePath;
+    }
+
+    const storageRootEnv = this.configService.get<string>('STORAGE_ROOT');
+
+    let baseStorageDir: string;
+
+    if (storageRootEnv && /^[a-zA-Z]:\\/.test(storageRootEnv)) {
+      baseStorageDir = storageRootEnv;
+    } else {
+      baseStorageDir = path.resolve(process.cwd(), '../infra/storage');
+    }
+
+    const cleanRelativePath = relativePath.replace(/^[/\\]+/, '');
+
+    return path.join(baseStorageDir, cleanRelativePath);
+  }
 
   private async cleanupFiles(filePaths: (string | null | undefined)[]) {
     for (const filePath of filePaths) {
-      if (filePath) {
-        try {
-          const absolutePath = path.isAbsolute(filePath)
-            ? filePath
-            : path.join(process.cwd(), filePath);
-          await fs.unlink(absolutePath);
-        } catch {}
+      if (!filePath) continue;
+      try {
+        const absolutePath = this.getAbsolutePath(filePath);
+        await fs.unlink(absolutePath);
+      } catch (err: any) {
+        if (err.code !== 'ENOENT') {
+          console.error(`cleanupFiles gagal di path: ${filePath}`, err);
+        }
+      }
+    }
+  }
+
+  private async deletePhysicalFiles(filePaths: string[]) {
+    for (const filePath of filePaths) {
+      if (!filePath) continue;
+
+      const absolutePath = this.getAbsolutePath(filePath);
+      try {
+        await fs.unlink(absolutePath);
+        console.log(`[OK] Berhasil menghapus file fisik: ${absolutePath}`);
+      } catch (err: any) {
+        if (err.code === 'ENOENT') {
+          console.warn(
+            `[WARN] File tidak ditemukan di harddisk: ${absolutePath}`,
+          );
+        } else {
+          console.error(
+            `[ERROR] Gagal menghapus file fisik di path ${absolutePath}:`,
+            err,
+          );
+        }
       }
     }
   }
@@ -148,24 +198,6 @@ export class MoviesService {
     }
   }
 
-  private async deletePhysicalFiles(filePaths: string[]) {
-    for (const filePath of filePaths) {
-      if (!filePath) continue;
-
-      try {
-        const absolutePath = path.isAbsolute(filePath)
-          ? filePath
-          : path.join(process.cwd(), filePath);
-
-        await fs.unlink(absolutePath);
-      } catch (err: any) {
-        if (err.code !== 'ENOENT') {
-          console.error(`Gagal menghapus file di path ${filePath}:`, err);
-        }
-      }
-    }
-  }
-
   async resetAllTables() {
     try {
       const images = await this.prisma.images.findMany({
@@ -174,6 +206,13 @@ export class MoviesService {
       const movieFiles = await this.prisma.movieFiles.findMany({
         select: { file_path: true },
       });
+
+      const allFilePaths = [
+        ...images.map((img) => img.file_path),
+        ...movieFiles.map((mf) => mf.file_path),
+      ];
+
+      await this.deletePhysicalFiles(allFilePaths);
 
       await this.prisma.$executeRawUnsafe(`
         TRUNCATE TABLE 
@@ -194,13 +233,6 @@ export class MoviesService {
           "movie_series"
         RESTART IDENTITY CASCADE;
       `);
-
-      const allFilePaths = [
-        ...images.map((img) => img.file_path),
-        ...movieFiles.map((mf) => mf.file_path),
-      ];
-
-      await this.deletePhysicalFiles(allFilePaths);
 
       return {
         statusCode: 200,

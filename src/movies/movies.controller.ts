@@ -76,15 +76,18 @@ export class MoviesController {
     const parts = req.parts();
     const fields: Record<string, any> = {};
 
-    let coverPath = '';
-    let videoPath = '';
+    let coverAbsolutePath = '';
+    let coverRelativePath = '';
+    let videoAbsolutePath = '';
+    let videoRelativePath = '';
     let videoSize = BigInt(0);
 
     for await (const part of parts) {
       if (part.type === 'file') {
         if (part.fieldname === 'cover') {
           const uniqueFileName = `${uuidv4()}.webp`;
-          const targetPath = path.join(STORAGE_PATHS.COVERS, uniqueFileName);
+          coverAbsolutePath = path.join(STORAGE_PATHS.COVERS, uniqueFileName);
+          coverRelativePath = `covers/${uniqueFileName}`;
 
           const imageTransformer = sharp()
             .resize({ width: 800, withoutEnlargement: true })
@@ -93,20 +96,20 @@ export class MoviesController {
           await pipeline(
             part.file,
             imageTransformer,
-            fs.createWriteStream(targetPath),
+            fs.createWriteStream(coverAbsolutePath),
           );
-          coverPath = targetPath;
         } else if (part.fieldname === 'video') {
           const fileExt = path.extname(part.filename);
           const uniqueFileName = `${uuidv4()}${fileExt}`;
-          const targetPath = path.join(STORAGE_PATHS.MOVIES, uniqueFileName);
-          const writeStream = fs.createWriteStream(targetPath);
+          videoAbsolutePath = path.join(STORAGE_PATHS.MOVIES, uniqueFileName);
+          videoRelativePath = `movies/${uniqueFileName}`;
+
+          const writeStream = fs.createWriteStream(videoAbsolutePath);
 
           await pipeline(part.file, writeStream);
 
-          const stats = await fs.promises.stat(targetPath);
+          const stats = await fs.promises.stat(videoAbsolutePath);
           videoSize = BigInt(stats.size);
-          videoPath = targetPath;
         } else {
           part.file.resume();
         }
@@ -124,29 +127,29 @@ export class MoviesController {
       }
     }
 
-    if (!coverPath || !videoPath) {
-      if (coverPath && fs.existsSync(coverPath))
-        await fs.promises.unlink(coverPath);
-      if (videoPath && fs.existsSync(videoPath))
-        await fs.promises.unlink(videoPath);
+    if (!coverRelativePath || !videoRelativePath) {
+      if (coverAbsolutePath && fs.existsSync(coverAbsolutePath))
+        await fs.promises.unlink(coverAbsolutePath);
+      if (videoAbsolutePath && fs.existsSync(videoAbsolutePath))
+        await fs.promises.unlink(videoAbsolutePath);
       throw new BadRequestException('Berkas cover dan video wajib diunggah.');
     }
 
     const dtoInstance = plainToInstance(CreateMovieDto, fields);
     const errors = await validate(dtoInstance);
     if (errors.length > 0) {
-      if (coverPath && fs.existsSync(coverPath))
-        await fs.promises.unlink(coverPath);
-      if (videoPath && fs.existsSync(videoPath))
-        await fs.promises.unlink(videoPath);
+      if (coverAbsolutePath && fs.existsSync(coverAbsolutePath))
+        await fs.promises.unlink(coverAbsolutePath);
+      if (videoAbsolutePath && fs.existsSync(videoAbsolutePath))
+        await fs.promises.unlink(videoAbsolutePath);
       throw new BadRequestException(errors);
     }
 
     try {
       const result = await this.moviesService.createMovieWithFiles(
         dtoInstance,
-        coverPath,
-        videoPath,
+        coverRelativePath,
+        videoRelativePath,
         videoSize,
       );
 
@@ -156,10 +159,10 @@ export class MoviesController {
         data: result,
       };
     } catch (error) {
-      if (coverPath && fs.existsSync(coverPath))
-        await fs.promises.unlink(coverPath);
-      if (videoPath && fs.existsSync(videoPath))
-        await fs.promises.unlink(videoPath);
+      if (coverAbsolutePath && fs.existsSync(coverAbsolutePath))
+        await fs.promises.unlink(coverAbsolutePath);
+      if (videoAbsolutePath && fs.existsSync(videoAbsolutePath))
+        await fs.promises.unlink(videoAbsolutePath);
       throw error;
     }
   }
