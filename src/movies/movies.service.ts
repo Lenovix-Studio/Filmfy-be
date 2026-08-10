@@ -39,12 +39,35 @@ export class MoviesService {
     return path.join(baseStorageDir, cleanRelativePath);
   }
 
+  private async removeEmptyDirsRecursively(dirPath: string) {
+    try {
+      const files = await fs.readdir(dirPath);
+      if (files.length === 0) {
+        await fs.rmdir(dirPath);
+
+        const parentDir = path.dirname(dirPath);
+        if (
+          parentDir.endsWith('movies') ||
+          parentDir.endsWith('storage') ||
+          !parentDir.includes('movies')
+        ) {
+          return;
+        }
+
+        await this.removeEmptyDirsRecursively(parentDir);
+      }
+    } catch {}
+  }
+
   private async cleanupFiles(filePaths: (string | null | undefined)[]) {
     for (const filePath of filePaths) {
       if (!filePath) continue;
       try {
         const absolutePath = this.getAbsolutePath(filePath);
         await fs.unlink(absolutePath);
+
+        const parentDir = path.dirname(absolutePath);
+        await this.removeEmptyDirsRecursively(parentDir);
       } catch (err: any) {
         if (err.code !== 'ENOENT') {
           console.error(`cleanupFiles gagal di path: ${filePath}`, err);
@@ -54,13 +77,16 @@ export class MoviesService {
   }
 
   private async deletePhysicalFiles(filePaths: string[]) {
+    const parentDirs = new Set<string>();
+
     for (const filePath of filePaths) {
       if (!filePath) continue;
 
       const absolutePath = this.getAbsolutePath(filePath);
       try {
         await fs.unlink(absolutePath);
-        console.log(`[OK] Berhasil menghapus file fisik: ${absolutePath}`);
+
+        parentDirs.add(path.dirname(absolutePath));
       } catch (err: any) {
         if (err.code === 'ENOENT') {
           console.warn(
@@ -73,6 +99,10 @@ export class MoviesService {
           );
         }
       }
+    }
+
+    for (const dir of parentDirs) {
+      await this.removeEmptyDirsRecursively(dir);
     }
   }
 
@@ -237,7 +267,7 @@ export class MoviesService {
       return {
         statusCode: 200,
         message:
-          'Berhasil mereset seluruh data tabel dan menghapus semua file fisik terkait.',
+          'Berhasil mereset seluruh data tabel dan menghapus semua file serta folder terkait.',
       };
     } catch (err: any) {
       throw new InternalServerErrorException(

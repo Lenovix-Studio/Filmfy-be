@@ -76,18 +76,23 @@ export class MoviesController {
     const parts = req.parts();
     const fields: Record<string, any> = {};
 
-    let coverAbsolutePath = '';
-    let coverRelativePath = '';
-    let videoAbsolutePath = '';
-    let videoRelativePath = '';
+    const tempDir =
+      (STORAGE_PATHS as any).TEMP ||
+      path.resolve(STORAGE_PATHS.MOVIES, '../temp');
+
+    await fs.promises.mkdir(tempDir, { recursive: true });
+
+    let tempCoverPath = '';
+    let tempVideoPath = '';
+    let videoExt = '';
     let videoSize = BigInt(0);
 
     for await (const part of parts) {
       if (part.type === 'file') {
+        const tempUuid = uuidv4();
+
         if (part.fieldname === 'cover') {
-          const uniqueFileName = `${uuidv4()}.webp`;
-          coverAbsolutePath = path.join(STORAGE_PATHS.COVERS, uniqueFileName);
-          coverRelativePath = `covers/${uniqueFileName}`;
+          tempCoverPath = path.join(tempDir, `temp_cover_${tempUuid}.webp`);
 
           const imageTransformer = sharp()
             .resize({ width: 800, withoutEnlargement: true })
@@ -96,19 +101,18 @@ export class MoviesController {
           await pipeline(
             part.file,
             imageTransformer,
-            fs.createWriteStream(coverAbsolutePath),
+            fs.createWriteStream(tempCoverPath),
           );
         } else if (part.fieldname === 'video') {
-          const fileExt = path.extname(part.filename);
-          const uniqueFileName = `${uuidv4()}${fileExt}`;
-          videoAbsolutePath = path.join(STORAGE_PATHS.MOVIES, uniqueFileName);
-          videoRelativePath = `movies/${uniqueFileName}`;
+          videoExt = path.extname(part.filename) || '.mp4';
+          tempVideoPath = path.join(
+            tempDir,
+            `temp_video_${tempUuid}${videoExt}`,
+          );
 
-          const writeStream = fs.createWriteStream(videoAbsolutePath);
+          await pipeline(part.file, fs.createWriteStream(tempVideoPath));
 
-          await pipeline(part.file, writeStream);
-
-          const stats = await fs.promises.stat(videoAbsolutePath);
+          const stats = await fs.promises.stat(tempVideoPath);
           videoSize = BigInt(stats.size);
         } else {
           part.file.resume();
@@ -127,25 +131,56 @@ export class MoviesController {
       }
     }
 
-    if (!coverRelativePath || !videoRelativePath) {
-      if (coverAbsolutePath && fs.existsSync(coverAbsolutePath))
-        await fs.promises.unlink(coverAbsolutePath);
-      if (videoAbsolutePath && fs.existsSync(videoAbsolutePath))
-        await fs.promises.unlink(videoAbsolutePath);
+    const cleanupTemp = async () => {
+      if (tempCoverPath && fs.existsSync(tempCoverPath))
+        await fs.promises.unlink(tempCoverPath);
+      if (tempVideoPath && fs.existsSync(tempVideoPath))
+        await fs.promises.unlink(tempVideoPath);
+    };
+
+    if (!tempCoverPath || !tempVideoPath) {
+      await cleanupTemp();
       throw new BadRequestException('Berkas cover dan video wajib diunggah.');
     }
 
     const dtoInstance = plainToInstance(CreateMovieDto, fields);
     const errors = await validate(dtoInstance);
     if (errors.length > 0) {
-      if (coverAbsolutePath && fs.existsSync(coverAbsolutePath))
-        await fs.promises.unlink(coverAbsolutePath);
-      if (videoAbsolutePath && fs.existsSync(videoAbsolutePath))
-        await fs.promises.unlink(videoAbsolutePath);
+      await cleanupTemp();
       throw new BadRequestException(errors);
     }
 
+    const movieCode = dtoInstance.code.trim();
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const targetMovieDir = path.join(
+      STORAGE_PATHS.MOVIES,
+      year,
+      month,
+      day,
+      movieCode,
+    );
+    await fs.promises.mkdir(targetMovieDir, { recursive: true });
+
+    const shortUuidCover = uuidv4().substring(0, 8);
+    const shortUuidVideo = uuidv4().substring(0, 8);
+
+    const coverFileName = `${movieCode}_cover_${shortUuidCover}.webp`;
+    const videoFileName = `${movieCode}_video_${shortUuidVideo}${videoExt}`;
+
+    const coverAbsolutePath = path.join(targetMovieDir, coverFileName);
+    const videoAbsolutePath = path.join(targetMovieDir, videoFileName);
+
+    const coverRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${coverFileName}`;
+    const videoRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${videoFileName}`;
+
     try {
+      await fs.promises.rename(tempCoverPath, coverAbsolutePath);
+      await fs.promises.rename(tempVideoPath, videoAbsolutePath);
+
       const result = await this.moviesService.createMovieWithFiles(
         dtoInstance,
         coverRelativePath,
@@ -159,10 +194,19 @@ export class MoviesController {
         data: result,
       };
     } catch (error) {
-      if (coverAbsolutePath && fs.existsSync(coverAbsolutePath))
+      await cleanupTemp();
+      if (fs.existsSync(coverAbsolutePath))
         await fs.promises.unlink(coverAbsolutePath);
-      if (videoAbsolutePath && fs.existsSync(videoAbsolutePath))
+      if (fs.existsSync(videoAbsolutePath))
         await fs.promises.unlink(videoAbsolutePath);
+
+      if (fs.existsSync(targetMovieDir)) {
+        const remaining = await fs.promises.readdir(targetMovieDir);
+        if (remaining.length === 0) {
+          await fs.promises.rmdir(targetMovieDir);
+        }
+      }
+
       throw error;
     }
   }
