@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CreateMovieDto } from './dto/create-movie.dto';
+import sharp from 'sharp';
 
 @ApiTags('Movies')
 @Controller('movies')
@@ -39,7 +40,7 @@ export class MoviesController {
         cover: {
           type: 'string',
           format: 'binary',
-          description: 'File gambar cover/poster (JPG/PNG)',
+          description: 'File gambar cover/poster (JPG/PNG/WEBP)',
         },
         video: {
           type: 'string',
@@ -81,16 +82,26 @@ export class MoviesController {
 
     for await (const part of parts) {
       if (part.type === 'file') {
-        const fileExt = path.extname(part.filename);
-        const uniqueFileName = `${uuidv4()}${fileExt}`;
-
         if (part.fieldname === 'cover') {
+          const uniqueFileName = `${uuidv4()}.webp`;
           const targetPath = path.join(STORAGE_PATHS.COVERS, uniqueFileName);
-          await pipeline(part.file, fs.createWriteStream(targetPath));
+
+          const imageTransformer = sharp()
+            .resize({ width: 800, withoutEnlargement: true })
+            .webp({ quality: 80 });
+
+          await pipeline(
+            part.file,
+            imageTransformer,
+            fs.createWriteStream(targetPath),
+          );
           coverPath = targetPath;
         } else if (part.fieldname === 'video') {
+          const fileExt = path.extname(part.filename);
+          const uniqueFileName = `${uuidv4()}${fileExt}`;
           const targetPath = path.join(STORAGE_PATHS.MOVIES, uniqueFileName);
           const writeStream = fs.createWriteStream(targetPath);
+
           await pipeline(part.file, writeStream);
 
           const stats = await fs.promises.stat(targetPath);

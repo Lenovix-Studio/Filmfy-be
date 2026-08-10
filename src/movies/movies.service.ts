@@ -13,11 +13,14 @@ import { CreateMovieDto } from './dto/create-movie.dto';
 export class MoviesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async cleanupFiles(filePaths: string[]) {
+  private async cleanupFiles(filePaths: (string | null | undefined)[]) {
     for (const filePath of filePaths) {
       if (filePath) {
         try {
-          await fs.unlink(filePath);
+          const absolutePath = path.isAbsolute(filePath)
+            ? filePath
+            : path.join(process.cwd(), filePath);
+          await fs.unlink(absolutePath);
         } catch {}
       }
     }
@@ -127,6 +130,7 @@ export class MoviesService {
       });
     } catch (error: any) {
       await this.cleanupFiles([coverPath, movieFilePath]);
+
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
@@ -161,6 +165,7 @@ export class MoviesService {
       }
     }
   }
+
   async resetAllTables() {
     try {
       const images = await this.prisma.images.findMany({
