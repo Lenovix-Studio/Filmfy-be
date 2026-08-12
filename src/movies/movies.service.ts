@@ -118,6 +118,7 @@ export class MoviesService {
           data: {
             code: dto.code,
             title: dto.title,
+            overview: dto.overview,
           },
         });
 

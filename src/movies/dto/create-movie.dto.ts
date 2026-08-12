@@ -36,6 +36,10 @@ export class CreateMovieDto {
   @IsString()
   title!: string;
 
+  @ApiProperty({ example: 'Bercerita tentang...', description: 'Overview film' })
+  @IsString()
+  overview!: string;
+
   @ApiPropertyOptional({ example: 'christopher nolan' })
   @IsOptional()
   @Transform(({ value }) => normalizeString(value))

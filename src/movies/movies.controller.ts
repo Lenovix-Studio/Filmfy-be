@@ -49,6 +49,7 @@ export class MoviesController {
         },
         code: { type: 'string', example: 'MOV-001' },
         title: { type: 'string', example: 'Inception' },
+        overview: { type: 'string', example: 'Bercerita tentang....' },
         director: { type: 'string', example: 'Christopher Nolan' },
         studio: { type: 'string', example: 'Warner Bros' },
         label: { type: 'string', example: 'Legendary Pictures' },
