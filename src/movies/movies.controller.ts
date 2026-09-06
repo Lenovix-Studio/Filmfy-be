@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Delete,
   Req,
@@ -29,6 +30,20 @@ import sharp from 'sharp';
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
+  // API for get cover, code, title movie
+  @Get()
+  @ApiOperation({ summary: 'Mendapatkan daftar film untuk Homepage' })
+  @ApiResponse({ status: 200, description: 'Berhasil mengambil daftar film' })
+  async getHomepageMovies() {
+    const data = await this.moviesService.findAllForHome();
+    return {
+      statusCode: 200,
+      message: 'Berhasil mengambil daftar film',
+      data,
+    };
+  }
+
+  // API for Upload
   @Post('upload')
   @ApiOperation({ summary: 'Upload film baru beserta cover dan metadata' })
   @ApiConsumes('multipart/form-data')
@@ -212,6 +227,7 @@ export class MoviesController {
     }
   }
 
+  // API for reset
   @Delete('reset')
   @ApiOperation({
     summary: 'RESET DATABASE: Hapus seluruh data di semua tabel',

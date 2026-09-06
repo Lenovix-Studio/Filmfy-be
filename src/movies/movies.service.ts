@@ -294,4 +294,32 @@ export class MoviesService {
       );
     }
   }
+
+  async findAllForHome() {
+    const movies = await this.prisma.movies.findMany({
+      select: {
+        id: true,
+        code: true,
+        title: true,
+        images: {
+          where: { image_type: 'cover' },
+          select: { file_path: true },
+          take: 1,
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    return movies.map((movie) => {
+      const cover = movie.images[0]?.file_path || null;
+      return {
+        id: movie.id,
+        code: movie.code,
+        title: movie.title,
+        coverPath: cover,
+      };
+    });
+  }
 }

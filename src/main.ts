@@ -4,6 +4,7 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyMultipart from '@fastify/multipart';
@@ -17,6 +18,8 @@ async function bootstrap() {
       bodyLimit: 10 * 1024 * 1024 * 1024,
     }),
   );
+
+  const configService = app.get(ConfigService);
 
   app.enableCors({
     origin: true,
@@ -40,8 +43,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  app.register(fastifyStatic as any, {
-    root: path.join(process.cwd(), 'infra/storage'),
+  const storagePath =
+    configService.get<string>('STORAGE_PATH') ||
+    path.join(process.cwd(), 'infra/storage/dev');
+
+  await app.register(fastifyStatic as any, {
+    root: path.resolve(storagePath),
     prefix: '/storage/',
   });
 
