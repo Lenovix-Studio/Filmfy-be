@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   ConflictException,
+  NotFoundException, // <-- Ditambahkan
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as fs from 'fs/promises';
@@ -321,5 +322,52 @@ export class MoviesService {
         coverPath: cover,
       };
     });
+  }
+
+  async findOne(id: string) {
+    const rawMovie = await this.prisma.movies.findUnique({
+      where: { id },
+      include: {
+        movie_studios: { include: { studio: true } },
+        movie_series: { include: { series: true } },
+        movie_labels: { include: { label: true } },
+        movie_genres: { include: { genre: true } },
+        movie_directors: { include: { director: true } },
+        movie_casts: { include: { cast: true } },
+        images: true,
+        movie_files: true,
+      },
+    });
+
+    if (!rawMovie) {
+      throw new NotFoundException(`Film dengan ID "${id}" tidak ditemukan`);
+    }
+
+    return {
+      id: rawMovie.id,
+      code: rawMovie.code,
+      title: rawMovie.title,
+      originalTitle: rawMovie.original_title,
+      overview: rawMovie.overview,
+      releaseDate: rawMovie.release_date,
+      runtimeMinutes: rawMovie.runtime_minutes,
+      language: rawMovie.language,
+      country: rawMovie.country,
+      tmdbId: rawMovie.tmdb_id,
+      imdbId: rawMovie.imdb_id,
+      createdAt: rawMovie.created_at,
+      updatedAt: rawMovie.updated_at,
+      studios: rawMovie.movie_studios.map((item) => item.studio),
+      series: rawMovie.movie_series.map((item) => item.series),
+      labels: rawMovie.movie_labels.map((item) => item.label),
+      genres: rawMovie.movie_genres.map((item) => item.genre),
+      directors: rawMovie.movie_directors.map((item) => item.director),
+      casts: rawMovie.movie_casts.map((item) => item.cast),
+      images: rawMovie.images,
+      files: rawMovie.movie_files.map((file) => ({
+        ...file,
+        file_size: file.file_size ? Number(file.file_size) : null,
+      })),
+    };
   }
 }

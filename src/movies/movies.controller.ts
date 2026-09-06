@@ -5,6 +5,8 @@ import {
   Delete,
   Req,
   BadRequestException,
+  Param,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiConsumes,
@@ -12,6 +14,7 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { type FastifyRequest } from 'fastify';
 import { MoviesService } from './movies.service';
@@ -30,14 +33,42 @@ import sharp from 'sharp';
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
+  // API for get id movie
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Mendapatkan detail film berdasarkan ID',
+    description:
+      'Mengambil data lengkap film termasuk relasi studio, series, label, genre, director, cast, images, dan files.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID dari film yang ingin dicari',
+    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Berhasil mengambil detail film',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Film dengan ID yang diberikan tidak ditemukan',
+  })
+  async getMovieDetail(@Param('id') id: string) {
+    return this.moviesService.findOne(id);
+  }
+
   // API for get cover, code, title movie
   @Get()
   @ApiOperation({ summary: 'Mendapatkan daftar film untuk Homepage' })
-  @ApiResponse({ status: 200, description: 'Berhasil mengambil daftar film' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Berhasil mengambil daftar film',
+  })
   async getHomepageMovies() {
     const data = await this.moviesService.findAllForHome();
     return {
-      statusCode: 200,
+      statusCode: HttpStatus.OK,
       message: 'Berhasil mengambil daftar film',
       data,
     };
@@ -82,8 +113,14 @@ export class MoviesController {
       },
     },
   })
-  @ApiResponse({ status: 201, description: 'Film berhasil diunggah' })
-  @ApiResponse({ status: 400, description: 'Validasi gagal atau file kurang' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Film berhasil diunggah',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Validasi gagal atau file kurang',
+  })
   async uploadMovie(@Req() req: FastifyRequest) {
     if (!req.isMultipart()) {
       throw new BadRequestException('Request harus berupa multipart/form-data');
@@ -205,7 +242,7 @@ export class MoviesController {
       );
 
       return {
-        statusCode: 201,
+        statusCode: HttpStatus.CREATED,
         message: 'Film berhasil diunggah',
         data: result,
       };
@@ -232,7 +269,10 @@ export class MoviesController {
   @ApiOperation({
     summary: 'RESET DATABASE: Hapus seluruh data di semua tabel',
   })
-  @ApiResponse({ status: 200, description: 'Seluruh data berhasil dihapus' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Seluruh data berhasil dihapus',
+  })
   async resetDatabase() {
     return await this.moviesService.resetAllTables();
   }
