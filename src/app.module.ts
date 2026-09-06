@@ -1,11 +1,22 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { MoviesModule } from './movies/movies.module';
 
 @Module({
-  imports: [PrismaModule, MoviesModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath:
+        process.env.NODE_ENV === 'development' || process.env.APP_ENV === 'dev'
+          ? '.env.dev'
+          : '.env',
+    }),
+    PrismaModule,
+    MoviesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

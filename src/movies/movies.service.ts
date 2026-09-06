@@ -24,14 +24,29 @@ export class MoviesService {
       return relativePath;
     }
 
-    const storageRootEnv = this.configService.get<string>('STORAGE_ROOT');
+    const storageRootEnv =
+      this.configService.get<string>('STORAGE_PATH') ||
+      this.configService.get<string>('STORAGE_ROOT');
 
     let baseStorageDir: string;
 
     if (storageRootEnv && /^[a-zA-Z]:\\/.test(storageRootEnv)) {
       baseStorageDir = storageRootEnv;
+    } else if (storageRootEnv) {
+      baseStorageDir = path.resolve(process.cwd(), storageRootEnv);
     } else {
-      baseStorageDir = path.resolve(process.cwd(), '../infra/storage');
+      const appEnv =
+        this.configService.get<string>('APP_ENV') ||
+        this.configService.get<string>('NODE_ENV') ||
+        'dev';
+      const envFolder =
+        appEnv === 'production' || appEnv === 'prod' ? 'prod' : 'dev';
+
+      baseStorageDir = path.resolve(
+        process.cwd(),
+        '../infra/storage',
+        envFolder,
+      );
     }
 
     const cleanRelativePath = relativePath.replace(/^[/\\]+/, '');
@@ -48,8 +63,11 @@ export class MoviesService {
         const parentDir = path.dirname(dirPath);
         if (
           parentDir.endsWith('movies') ||
+          parentDir.endsWith('covers') ||
           parentDir.endsWith('storage') ||
-          !parentDir.includes('movies')
+          parentDir.endsWith('dev') ||
+          parentDir.endsWith('prod') ||
+          (!parentDir.includes('movies') && !parentDir.includes('covers'))
         ) {
           return;
         }
