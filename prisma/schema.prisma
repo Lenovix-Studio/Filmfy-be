@@ -165,3 +165,30 @@ model MovieStudios {
   @@id([movie_id, studio_id])
   @@map("movie_studios")
 }
+
+model CodeTypes {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code        String        @unique @db.VarChar(50)
+  name        String        @db.VarChar(100)
+  description String?
+  created_at  DateTime      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime      @default(now()) @updatedAt @db.Timestamp(6)
+  details     CodeDetails[]
+
+  @@map("code_types")
+}
+
+model CodeDetails {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type_code  String    @db.VarChar(50)
+  code       String    @db.VarChar(50)
+  label      String    @db.VarChar(100)
+  order      Int       @default(0)
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @default(now()) @updatedAt @db.Timestamp(6)
+  type       CodeTypes @relation(fields: [type_code], references: [code], onDelete: Cascade)
+
+  @@unique([type_code, code])
+  @@map("code_details")
+}

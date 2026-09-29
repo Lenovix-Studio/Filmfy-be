@@ -4,6 +4,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { MoviesModule } from './movies/movies.module';
+import { CommonCodesModule } from './common-codes/common-codes.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { MoviesModule } from './movies/movies.module';
     }),
     PrismaModule,
     MoviesModule,
+    CommonCodesModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
