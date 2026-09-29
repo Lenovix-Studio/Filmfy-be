@@ -1,3 +1,4 @@
+import * as path from 'path';
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import {
@@ -9,7 +10,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
-import * as path from 'path';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -19,6 +20,7 @@ async function bootstrap() {
     }),
   );
 
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   const configService = app.get(ConfigService);
 
   app.enableCors({

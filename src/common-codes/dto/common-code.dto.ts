@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -13,20 +14,32 @@ export class CreateCodeTypeDto {
 
   @IsString()
   @IsNotEmpty()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   name!: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   description?: string;
 }
 
 export class UpdateCodeTypeDto {
   @IsString()
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   name?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   description?: string;
 }
 
@@ -37,6 +50,9 @@ export class CreateCodeDetailDto {
 
   @IsString()
   @IsNotEmpty()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   label!: string;
 
   @IsNumber()
@@ -51,6 +67,9 @@ export class CreateCodeDetailDto {
 export class UpdateCodeDetailDto {
   @IsString()
   @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.toLowerCase().trim() : value,
+  )
   label?: string;
 
   @IsNumber()
