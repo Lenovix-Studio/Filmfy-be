@@ -11,6 +11,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { ValidationPipe } from '@nestjs/common';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -18,8 +19,10 @@ async function bootstrap() {
     new FastifyAdapter({
       bodyLimit: 10 * 1024 * 1024 * 1024,
     }),
+    { bufferLogs: true },
   );
 
+  app.useLogger(app.get(Logger));
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   const configService = app.get(ConfigService);
 

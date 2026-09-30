@@ -60,4 +60,48 @@ export class SettingsService {
       throw new InternalServerErrorException('Gagal mereset data.');
     }
   }
+
+  async getLogs() {
+    try {
+      const logs = await this.prisma.systemLogs.findMany({
+        orderBy: { created_at: 'desc' },
+        take: 500,
+      });
+
+      const formattedLogs = logs.map((log) => {
+        const date = log.created_at;
+        const yyyy = date.getFullYear();
+        const MM = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mm = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+
+        return {
+          id: log.id,
+          timestamp: `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`,
+          level: log.level,
+          message: log.message,
+          source: log.source,
+        };
+      });
+
+      return { data: formattedLogs };
+    } catch (error) {
+      console.error('Error reading logs:', error);
+      throw new InternalServerErrorException(
+        'Gagal mengambil data log dari database.',
+      );
+    }
+  }
+
+  async clearLogs() {
+    try {
+      await this.prisma.systemLogs.deleteMany();
+      return { message: 'Semua log berhasil dihapus.' };
+    } catch (error) {
+      console.error('Error clearing logs:', error);
+      throw new InternalServerErrorException('Gagal menghapus log.');
+    }
+  }
 }
