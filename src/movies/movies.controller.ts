@@ -191,11 +191,6 @@ export class MoviesController {
         await fs.promises.unlink(tempVideoPath);
     };
 
-    if (!tempCoverPath || !tempVideoPath) {
-      await cleanupTemp();
-      throw new BadRequestException('Berkas cover dan video wajib diunggah.');
-    }
-
     const dtoInstance = plainToInstance(CreateMovieDto, fields);
     const errors = await validate(dtoInstance);
     if (errors.length > 0) {
@@ -227,12 +222,19 @@ export class MoviesController {
     const coverAbsolutePath = path.join(targetMovieDir, coverFileName);
     const videoAbsolutePath = path.join(targetMovieDir, videoFileName);
 
-    const coverRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${coverFileName}`;
-    const videoRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${videoFileName}`;
+    let coverRelativePath = '';
+    let videoRelativePath = '';
 
     try {
-      await fs.promises.rename(tempCoverPath, coverAbsolutePath);
-      await fs.promises.rename(tempVideoPath, videoAbsolutePath);
+      if (tempCoverPath) {
+        await fs.promises.rename(tempCoverPath, coverAbsolutePath);
+        coverRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${coverFileName}`;
+      }
+
+      if (tempVideoPath) {
+        await fs.promises.rename(tempVideoPath, videoAbsolutePath);
+        videoRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${videoFileName}`;
+      }
 
       const result = await this.moviesService.createMovieWithFiles(
         dtoInstance,

@@ -2,7 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   ConflictException,
-  NotFoundException, // <-- Ditambahkan
+  NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import * as fs from 'fs/promises';
@@ -173,25 +173,25 @@ export class MoviesService {
         };
 
         await handleMasterRelation(
-          dto.director ? [dto.director] : [],
+          dto.director,
           tx.directors,
           tx.movieDirectors,
           'director_id',
         );
         await handleMasterRelation(
-          dto.studio ? [dto.studio] : [],
+          dto.studio,
           tx.studios,
           tx.movieStudios,
           'studio_id',
         );
         await handleMasterRelation(
-          dto.label ? [dto.label] : [],
+          dto.label,
           tx.labels,
           tx.movieLabels,
           'label_id',
         );
         await handleMasterRelation(
-          dto.series ? [dto.series] : [],
+          dto.series,
           tx.series,
           tx.movieSeries,
           'series_id',
@@ -210,21 +210,25 @@ export class MoviesService {
           'cast_id',
         );
 
-        await tx.images.create({
-          data: {
-            movie_id: movie.id,
-            image_type: 'cover',
-            file_path: coverPath,
-          },
-        });
+        if (coverPath) {
+          await tx.images.create({
+            data: {
+              movie_id: movie.id,
+              image_type: 'cover',
+              file_path: coverPath,
+            },
+          });
+        }
 
-        await tx.movieFiles.create({
-          data: {
-            movie_id: movie.id,
-            file_path: movieFilePath,
-            file_size: movieFileSize,
-          },
-        });
+        if (movieFilePath) {
+          await tx.movieFiles.create({
+            data: {
+              movie_id: movie.id,
+              file_path: movieFilePath,
+              file_size: movieFileSize,
+            },
+          });
+        }
 
         return movie;
       });

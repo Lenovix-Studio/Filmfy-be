@@ -36,33 +36,36 @@ export class CreateMovieDto {
   @IsString()
   title!: string;
 
-  @ApiProperty({ example: 'Bercerita tentang...', description: 'Overview film' })
+  @ApiProperty({
+    example: 'Bercerita tentang...',
+    description: 'Overview film',
+  })
   @IsString()
   overview!: string;
 
-  @ApiPropertyOptional({ example: 'christopher nolan' })
+  @ApiPropertyOptional({ example: ['christopher nolan'], type: [String] })
   @IsOptional()
-  @Transform(({ value }) => normalizeString(value))
-  @IsString()
-  director?: string;
+  @Transform(({ value }) => normalizeStringArray(value))
+  @IsArray()
+  director?: string[];
 
-  @ApiPropertyOptional({ example: 'warner bros.' })
+  @ApiPropertyOptional({ example: ['warner bros.'], type: [String] })
   @IsOptional()
-  @Transform(({ value }) => normalizeString(value))
-  @IsString()
-  studio?: string;
+  @Transform(({ value }) => normalizeStringArray(value))
+  @IsArray()
+  studio?: string[];
 
-  @ApiPropertyOptional({ example: 'syncopy' })
+  @ApiPropertyOptional({ example: ['syncopy'], type: [String] })
   @IsOptional()
-  @Transform(({ value }) => normalizeString(value))
-  @IsString()
-  label?: string;
+  @Transform(({ value }) => normalizeStringArray(value))
+  @IsArray()
+  label?: string[];
 
-  @ApiPropertyOptional({ example: 'inception series' })
+  @ApiPropertyOptional({ example: ['inception series'], type: [String] })
   @IsOptional()
-  @Transform(({ value }) => normalizeString(value))
-  @IsString()
-  series?: string;
+  @Transform(({ value }) => normalizeStringArray(value))
+  @IsArray()
+  series?: string[];
 
   @ApiPropertyOptional({ example: ['action', 'sci-fi'], type: [String] })
   @IsOptional()
