@@ -28,6 +28,7 @@ model Movies {
   movie_labels    MovieLabels[]
   movie_series    MovieSeries[]
   movie_studios   MovieStudios[]
+  favorite        Favorites?
 
   @@map("movies")
 }
@@ -201,4 +202,14 @@ model SystemLogs {
   created_at DateTime @default(now()) @db.Timestamp(6)
 
   @@map("system_logs")
+}
+
+model Favorites {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  movie_id   String   @unique @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  movie      Movies   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+
+  @@map("favorites")
 }

@@ -2,9 +2,12 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Body,
   Delete,
   Req,
   BadRequestException,
+  NotFoundException,
   Param,
   HttpStatus,
 } from '@nestjs/common';
@@ -26,6 +29,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { CreateMovieDto } from './dto/create-movie.dto';
+import { UpdateMovieDto } from './dto/update-movie.dto';
 import sharp from 'sharp';
 
 @ApiTags('Movies')
@@ -267,6 +271,74 @@ export class MoviesController {
   }
 
   // API for reset
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update metadata film' })
+  async updateMovie(@Param('id') id: string, @Body() dto: UpdateMovieDto) {
+    return this.moviesService.updateMovie(id, dto);
+  }
+
+  // API add screenshot
+  @Post(':id/screenshots')
+  @ApiOperation({ summary: 'Upload screenshot untuk film' })
+  @ApiConsumes('multipart/form-data')
+  async uploadScreenshot(@Param('id') id: string, @Req() req: FastifyRequest) {
+    if (!req.isMultipart()) {
+      throw new BadRequestException('Request harus berupa multipart/form-data');
+    }
+
+    const parts = req.parts();
+    const uploadedImages: any[] = [];
+
+    const movie = await this.moviesService.findOne(id);
+    if (!movie) throw new NotFoundException('Film tidak ditemukan');
+
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+
+    const targetMovieDir = path.join(
+      STORAGE_PATHS.MOVIES,
+      year,
+      month,
+      day,
+      movie.code,
+    );
+    await fs.promises.mkdir(targetMovieDir, { recursive: true });
+
+    for await (const part of parts) {
+      if (part.type === 'file' && part.fieldname === 'screenshot') {
+        const shortUuid = uuidv4().substring(0, 8);
+        const fileName = `${movie.code}_screenshot_${shortUuid}.webp`;
+        const absolutePath = path.join(targetMovieDir, fileName);
+
+        const imageTransformer = sharp()
+          .resize({ width: 1280, withoutEnlargement: true })
+          .webp({ quality: 85 });
+
+        await pipeline(
+          part.file,
+          imageTransformer,
+          fs.createWriteStream(absolutePath),
+        );
+
+        const relativePath = `movies/${year}/${month}/${day}/${movie.code}/${fileName}`;
+        const image = await this.moviesService.addScreenshot(id, relativePath);
+        uploadedImages.push(image);
+      } else {
+        if (part.type === 'file') part.file.resume();
+      }
+    }
+
+    return { message: 'Screenshot berhasil diunggah', data: uploadedImages };
+  }
+
+  @Delete('images/:imageId')
+  @ApiOperation({ summary: 'Hapus gambar (cover/poster/screenshot)' })
+  async deleteImage(@Param('imageId') imageId: string) {
+    return this.moviesService.removeImage(imageId);
+  }
+
   @Delete('reset')
   @ApiOperation({
     summary: 'RESET DATABASE: Hapus seluruh data di semua tabel',
@@ -277,5 +349,17 @@ export class MoviesController {
   })
   async resetDatabase() {
     return await this.moviesService.resetAllTables();
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Hapus film berdasarkan ID' })
+  async deleteMovie(@Param('id') id: string) {
+    return this.moviesService.deleteMovie(id);
+  }
+
+  @Post(':id/favorite')
+  @ApiOperation({ summary: 'Toggle status favorit film' })
+  async toggleFavorite(@Param('id') id: string) {
+    return this.moviesService.toggleFavorite(id);
   }
 }

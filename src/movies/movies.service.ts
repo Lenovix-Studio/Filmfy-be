@@ -1,15 +1,15 @@
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import {
   Injectable,
   InternalServerErrorException,
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateMovieDto } from './dto/create-movie.dto';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateMovieDto } from './dto/create-movie.dto';
 
 @Injectable()
 export class MoviesService {
@@ -340,6 +340,7 @@ export class MoviesService {
         movie_casts: { include: { cast: true } },
         images: true,
         movie_files: true,
+        favorite: true,
       },
     });
 
@@ -372,6 +373,185 @@ export class MoviesService {
         ...file,
         file_size: file.file_size ? Number(file.file_size) : null,
       })),
+      isFavorite: rawMovie.favorite != null,
     };
+  }
+
+  async deleteMovie(id: string) {
+    const movie = await this.prisma.movies.findUnique({
+      where: { id },
+      include: { images: true, movie_files: true },
+    });
+
+    if (!movie) {
+      throw new NotFoundException(`Film dengan ID ${id} tidak ditemukan`);
+    }
+
+    const filePaths = [
+      ...movie.images.map((img) => img.file_path),
+      ...movie.movie_files.map((mf) => mf.file_path),
+    ].filter(Boolean);
+
+    await this.deletePhysicalFiles(filePaths);
+    await this.prisma.movies.delete({ where: { id } });
+
+    return { statusCode: 200, message: 'Film berhasil dihapus' };
+  }
+
+  async toggleFavorite(id: string) {
+    const movie = await this.prisma.movies.findUnique({ where: { id } });
+    if (!movie) {
+      throw new NotFoundException(`Film dengan ID ${id} tidak ditemukan`);
+    }
+
+    const existing = await this.prisma.favorites.findUnique({
+      where: { movie_id: id },
+    });
+
+    if (existing) {
+      await this.prisma.favorites.delete({ where: { movie_id: id } });
+      return {
+        statusCode: 200,
+        isFavorite: false,
+        message: 'Dihapus dari favorit',
+      };
+    } else {
+      await this.prisma.favorites.create({ data: { movie_id: id } });
+      return {
+        statusCode: 200,
+        isFavorite: true,
+        message: 'Ditambahkan ke favorit',
+      };
+    }
+  }
+
+  async updateMovie(id: string, dto: any) {
+    const movie = await this.prisma.movies.findUnique({ where: { id } });
+    if (!movie)
+      throw new NotFoundException(`Film dengan ID ${id} tidak ditemukan`);
+
+    const relationUpdates: any = {};
+    const transactionJobs: any[] = [];
+
+    if (dto.director !== undefined) {
+      transactionJobs.push(
+        this.prisma.movieDirectors.deleteMany({ where: { movie_id: id } }),
+      );
+    }
+    if (dto.studio !== undefined) {
+      transactionJobs.push(
+        this.prisma.movieStudios.deleteMany({ where: { movie_id: id } }),
+      );
+    }
+    if (dto.label !== undefined) {
+      transactionJobs.push(
+        this.prisma.movieLabels.deleteMany({ where: { movie_id: id } }),
+      );
+    }
+    if (dto.series !== undefined) {
+      transactionJobs.push(
+        this.prisma.movieSeries.deleteMany({ where: { movie_id: id } }),
+      );
+    }
+    if (dto.genre !== undefined) {
+      transactionJobs.push(
+        this.prisma.movieGenres.deleteMany({ where: { movie_id: id } }),
+      );
+    }
+    if (dto.cast !== undefined) {
+      transactionJobs.push(
+        this.prisma.movieCasts.deleteMany({ where: { movie_id: id } }),
+      );
+    }
+
+    const handleArray = async (
+      table: any,
+      relationTable: any,
+      items: string[],
+      fieldName: string,
+      relFieldId: string,
+    ) => {
+      if (!items || items.length === 0) return;
+      for (const name of items) {
+        let rec = await (this.prisma as any)[table].findFirst({
+          where: { [fieldName]: name },
+        });
+        if (!rec)
+          rec = await (this.prisma as any)[table].create({
+            data: { [fieldName]: name },
+          });
+        await (this.prisma as any)[relationTable].create({
+          data: { movie_id: id, [relFieldId]: rec.id },
+        });
+      }
+    };
+
+    transactionJobs.push(
+      this.prisma.movies.update({
+        where: { id },
+        data: {
+          title: dto.title,
+          code: dto.code,
+          overview: dto.overview,
+        },
+      }),
+    );
+
+    await this.prisma.$transaction(transactionJobs);
+
+    if (dto.director)
+      await handleArray(
+        'directors',
+        'movieDirectors',
+        dto.director,
+        'name',
+        'director_id',
+      );
+    if (dto.studio)
+      await handleArray(
+        'studios',
+        'movieStudios',
+        dto.studio,
+        'name',
+        'studio_id',
+      );
+    if (dto.label)
+      await handleArray('labels', 'movieLabels', dto.label, 'name', 'label_id');
+    if (dto.series)
+      await handleArray(
+        'series',
+        'movieSeries',
+        dto.series,
+        'name',
+        'series_id',
+      );
+    if (dto.genre)
+      await handleArray('genres', 'movieGenres', dto.genre, 'name', 'genre_id');
+    if (dto.cast)
+      await handleArray('casts', 'movieCasts', dto.cast, 'name', 'cast_id');
+
+    return { message: 'Metadata film berhasil diperbarui' };
+  }
+
+  async addScreenshot(id: string, imagePath: string) {
+    return this.prisma.images.create({
+      data: {
+        movie_id: id,
+        image_type: 'screenshot',
+        file_path: imagePath,
+      },
+    });
+  }
+
+  async removeImage(imageId: string) {
+    const image = await this.prisma.images.findUnique({
+      where: { id: imageId },
+    });
+    if (!image) throw new NotFoundException('Gambar tidak ditemukan');
+
+    await this.deletePhysicalFiles([image.file_path]);
+    await this.prisma.images.delete({ where: { id: imageId } });
+
+    return { message: 'Gambar berhasil dihapus' };
   }
 }
