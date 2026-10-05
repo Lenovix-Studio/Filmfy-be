@@ -16,7 +16,7 @@ export class MoviesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private getAbsolutePath(relativePath: string): string {
     if (!relativePath) return '';
@@ -75,7 +75,7 @@ export class MoviesService {
 
         await this.removeEmptyDirsRecursively(parentDir);
       }
-    } catch {}
+    } catch { }
   }
 
   private async cleanupFiles(filePaths: (string | null | undefined)[]) {
@@ -553,5 +553,44 @@ export class MoviesService {
     await this.prisma.images.delete({ where: { id: imageId } });
 
     return { message: 'Gambar berhasil dihapus' };
+  }
+
+  async findFavorites() {
+    const favorites = await this.prisma.favorites.findMany({
+      include: {
+        movie: {
+          select: {
+            id: true,
+            code: true,
+            title: true,
+            images: {
+              where: { image_type: 'cover' },
+              select: { file_path: true },
+              take: 1,
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    return favorites.map((fav) => {
+      const cover = fav.movie.images[0]?.file_path || null;
+      return {
+        id: fav.movie.id,
+        code: fav.movie.code,
+        title: fav.movie.title,
+        posterUrl: cover,
+        addedAt: fav.created_at,
+        isFavorite: true,
+      };
+    });
+  }
+
+  async clearAllFavorites() {
+    const count = await this.prisma.favorites.deleteMany({});
+    return { count: count.count };
   }
 }

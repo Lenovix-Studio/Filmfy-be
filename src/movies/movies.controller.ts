@@ -35,7 +35,7 @@ import sharp from 'sharp';
 @ApiTags('Movies')
 @Controller('movies')
 export class MoviesController {
-  constructor(private readonly moviesService: MoviesService) {}
+  constructor(private readonly moviesService: MoviesService) { }
 
   // API for get id movie
   @Get(':id')
@@ -361,5 +361,34 @@ export class MoviesController {
   @ApiOperation({ summary: 'Toggle status favorit film' })
   async toggleFavorite(@Param('id') id: string) {
     return this.moviesService.toggleFavorite(id);
+  }
+
+  @Get('favorites')
+  @ApiOperation({ summary: 'Mendapatkan daftar film favorit' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Berhasil mengambil daftar favorit',
+  })
+  async getFavorites() {
+    const data = await this.moviesService.findFavorites();
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Berhasil mengambil daftar favorit',
+      data,
+    };
+  }
+
+  @Delete('favorites')
+  @ApiOperation({ summary: 'Hapus semua film favorit' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Berhasil menghapus semua favorit',
+  })
+  async clearAllFavorites() {
+    const result = await this.moviesService.clearAllFavorites();
+    return {
+      statusCode: HttpStatus.OK,
+      message: `Berhasil menghapus ${result.count} favorit`,
+    };
   }
 }

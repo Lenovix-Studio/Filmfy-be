@@ -21,7 +21,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:push:dev": "dotenv -e .env.dev -- prisma db push",
     "db:gen:dev": "dotenv -e .env.dev -- bunx prisma generate",
-    "db:push:prod": "dotenv -e .env -- prisma db push"
+    "db:push:prod": "dotenv -e .env -- prisma db push",
+    "db:studio:dev": "dotenv -e .env.dev -- prisma studio",
+    "db:studio:prod": "dotenv -e .env -- prisma studio"
   },
   "dependencies": {
     "@fastify/multipart": "^10.1.0",
