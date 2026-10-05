@@ -12,6 +12,7 @@ model Movies {
   title           String           @db.VarChar(255)
   original_title  String?          @db.VarChar(255)
   overview        String?
+  status          String?          @db.VarChar(50)
   release_date    DateTime?        @db.Date
   runtime_minutes Int?
   language        String?          @db.VarChar(30)

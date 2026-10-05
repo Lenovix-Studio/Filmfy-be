@@ -138,6 +138,7 @@ export class MoviesService {
             code: dto.code,
             title: dto.title,
             overview: dto.overview,
+            status: dto.status,
           },
         });
 
@@ -306,6 +307,7 @@ export class MoviesService {
         id: true,
         code: true,
         title: true,
+        status: true,
         images: {
           where: { image_type: 'cover' },
           select: { file_path: true },
@@ -324,6 +326,7 @@ export class MoviesService {
         code: movie.code,
         title: movie.title,
         coverPath: cover,
+        status: movie.status || "DELETED",
       };
     });
   }
@@ -354,6 +357,7 @@ export class MoviesService {
       title: rawMovie.title,
       originalTitle: rawMovie.original_title,
       overview: rawMovie.overview,
+      status: rawMovie.status,
       releaseDate: rawMovie.release_date,
       runtimeMinutes: rawMovie.runtime_minutes,
       language: rawMovie.language,
