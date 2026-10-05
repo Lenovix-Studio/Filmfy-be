@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsInt, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -47,6 +47,31 @@ export class CreateMovieDto {
   @IsOptional()
   @IsString()
   status?: string;
+
+  @ApiPropertyOptional({ example: 'Indonesia', description: 'Negara produksi' })
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @ApiPropertyOptional({ example: 'en', description: 'Bahasa film' })
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @ApiPropertyOptional({ example: '2026-01-15', description: 'Tanggal rilis' })
+  @IsOptional()
+  @IsString()
+  release_date?: string;
+
+  @ApiPropertyOptional({ example: 120, description: 'Durasi dalam menit (auto-calc dari video)' })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    const num = Number(value);
+    return Number.isNaN(num) ? undefined : Math.round(num);
+  })
+  @IsInt()
+  runtime_minutes?: number;
 
   @ApiPropertyOptional({ example: ['christopher nolan'], type: [String] })
   @IsOptional()

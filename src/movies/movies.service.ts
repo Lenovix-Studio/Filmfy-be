@@ -139,6 +139,12 @@ export class MoviesService {
             title: dto.title,
             overview: dto.overview,
             status: dto.status,
+            country: dto.country,
+            language: dto.language,
+            release_date: dto.release_date
+              ? new Date(dto.release_date)
+              : undefined,
+            runtime_minutes: dto.runtime_minutes,
           },
         });
 
