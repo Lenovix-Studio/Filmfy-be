@@ -95,6 +95,22 @@ export class SettingsService {
     }
   }
 
+  async createLog(body: { level: string; message: string; source?: string }) {
+    try {
+      await this.prisma.systemLogs.create({
+        data: {
+          level: body.level,
+          message: body.message,
+          source: body.source || 'External',
+        },
+      });
+      return { message: 'Log created' };
+    } catch (error) {
+      console.error('Error creating log:', error);
+      throw new InternalServerErrorException('Gagal membuat log.');
+    }
+  }
+
   async clearLogs() {
     try {
       await this.prisma.systemLogs.deleteMany();
