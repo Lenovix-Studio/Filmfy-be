@@ -321,7 +321,7 @@ export class MoviesService {
         },
       },
       orderBy: {
-        created_at: 'desc',
+        updated_at: 'desc',
       },
     });
 

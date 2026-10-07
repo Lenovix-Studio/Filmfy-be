@@ -19,6 +19,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
+    "db:dev": "dotenv -e .env.dev -- prisma db push && dotenv -e .env.dev -- bunx prisma generate",
     "db:push:dev": "dotenv -e .env.dev -- prisma db push",
     "db:gen:dev": "dotenv -e .env.dev -- bunx prisma generate",
     "db:studio:dev": "dotenv -e .env.dev -- prisma studio",

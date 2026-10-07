@@ -83,6 +83,8 @@ export class SettingsService {
           level: log.level,
           message: log.message,
           source: log.source,
+          request: log.request,
+          response: log.response,
         };
       });
 
@@ -95,13 +97,15 @@ export class SettingsService {
     }
   }
 
-  async createLog(body: { level: string; message: string; source?: string }) {
+  async createLog(body: { level: string; message: string; source?: string; request?: any; response?: any }) {
     try {
       await this.prisma.systemLogs.create({
         data: {
           level: body.level,
           message: body.message,
           source: body.source || 'External',
+          request: body.request || null,
+          response: body.response || null,
         },
       });
       return { message: 'Log created' };
