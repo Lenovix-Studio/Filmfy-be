@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter } from 'events';
 import sharp from 'sharp';
 import * as fs from 'fs';
-import * as path from 'path';
 
 export interface MediaProcessingPayload {
   movieId: string;

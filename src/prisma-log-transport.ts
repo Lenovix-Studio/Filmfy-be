@@ -9,7 +9,7 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-export default async function (opts: any) {
+export default async function (_opts: any) {
   return build(async function (source) {
     for await (const obj of source) {
       if (obj.level >= 40) {

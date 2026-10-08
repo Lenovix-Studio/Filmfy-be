@@ -369,6 +369,119 @@ export class MoviesController {
     return this.moviesService.findOne(id);
   }
 
+  @Patch(':id/cover')
+  @ApiOperation({ summary: 'Ganti cover film' })
+  @ApiConsumes('multipart/form-data')
+  async replaceCover(@Param('id') id: string, @Req() req: FastifyRequest) {
+    if (!req.isMultipart()) {
+      throw new BadRequestException('Request harus multipart/form-data');
+    }
+    const movie = await this.moviesService.findOne(id);
+    if (!movie) throw new NotFoundException('Film tidak ditemukan');
+
+    const parts = req.parts();
+    let newCoverPath = '';
+    const tempDir = path.resolve(STORAGE_PATHS.MOVIES, '../temp');
+    await fs.promises.mkdir(tempDir, { recursive: true });
+
+    for await (const part of parts) {
+      if (part.type === 'file' && part.fieldname === 'cover') {
+        FileValidator.validateImageMime(part.mimetype);
+        const tempUuid = uuidv4();
+        const tempCoverPath = path.join(tempDir, `temp_cover_${tempUuid}.webp`);
+
+        const imageTransformer = sharp()
+          .resize({ width: 800, withoutEnlargement: true })
+          .webp({ quality: 80 });
+
+        await pipeline(
+          part.file,
+          FileValidator.createMagicBytesValidator('image'),
+          imageTransformer,
+          fs.createWriteStream(tempCoverPath),
+        );
+
+        const now = new Date();
+        const year = now.getFullYear().toString();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const targetDir = path.join(STORAGE_PATHS.MOVIES, year, month, day, movie.code);
+        await fs.promises.mkdir(targetDir, { recursive: true });
+
+        const fileName = `${movie.code}_cover_${uuidv4().substring(0, 8)}.webp`;
+        const absPath = path.join(targetDir, fileName);
+        await fs.promises.rename(tempCoverPath, absPath);
+        newCoverPath = `movies/${year}/${month}/${day}/${movie.code}/${fileName}`;
+        break;
+      } else if (part.type === 'file') {
+        part.file.resume();
+      }
+    }
+
+    if (!newCoverPath) {
+      throw new BadRequestException('File cover tidak ditemukan');
+    }
+
+    return this.moviesService.replaceCover(id, newCoverPath);
+  }
+
+  @Patch(':id/video')
+  @ApiOperation({ summary: 'Ganti video film' })
+  @ApiConsumes('multipart/form-data')
+  async replaceVideo(@Param('id') id: string, @Req() req: FastifyRequest) {
+    if (!req.isMultipart()) {
+      throw new BadRequestException('Request harus multipart/form-data');
+    }
+    const movie = await this.moviesService.findOne(id);
+    if (!movie) throw new NotFoundException('Film tidak ditemukan');
+
+    const parts = req.parts();
+    let newVideoPath = '';
+    let videoSize = BigInt(0);
+    const tempDir = path.resolve(STORAGE_PATHS.MOVIES, '../temp');
+    await fs.promises.mkdir(tempDir, { recursive: true });
+
+    for await (const part of parts) {
+      if (part.type === 'file' && part.fieldname === 'video') {
+        FileValidator.validateVideoMime(part.mimetype);
+        const ext = path.extname(part.filename) || '.mp4';
+        const tempUuid = uuidv4();
+        const tempVideoPath = path.join(tempDir, `temp_video_${tempUuid}${ext}`);
+
+        await pipeline(
+          part.file,
+          FileValidator.createMagicBytesValidator('video'),
+          fs.createWriteStream(tempVideoPath),
+        );
+
+        const stats = await fs.promises.stat(tempVideoPath);
+        videoSize = BigInt(stats.size);
+        FileValidator.validateVideoSize(Number(videoSize));
+
+        const now = new Date();
+        const year = now.getFullYear().toString();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const targetDir = path.join(STORAGE_PATHS.MOVIES, year, month, day, movie.code);
+        await fs.promises.mkdir(targetDir, { recursive: true });
+
+        const fileName = `${movie.code}_video_${uuidv4().substring(0, 8)}${ext}`;
+        const absPath = path.join(targetDir, fileName);
+        await fs.promises.rename(tempVideoPath, absPath);
+        newVideoPath = `movies/${year}/${month}/${day}/${movie.code}/${fileName}`;
+        break;
+      } else if (part.type === 'file') {
+        part.file.resume();
+      }
+    }
+
+    if (!newVideoPath) {
+      throw new BadRequestException('File video tidak ditemukan');
+    }
+
+    return this.moviesService.replaceVideo(id, newVideoPath, videoSize);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update metadata film' })
   async updateMovie(@Param('id') id: string, @Body() dto: UpdateMovieDto) {

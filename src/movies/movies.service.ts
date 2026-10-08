@@ -448,12 +448,53 @@ export class MoviesService {
     }
   }
 
+  async replaceCover(id: string, coverPath: string) {
+    const existing = await this.prisma.images.findFirst({
+      where: { movie_id: id, image_type: 'cover' },
+    });
+
+    if (existing) {
+      await this.deletePhysicalFiles([existing.file_path]);
+      await this.prisma.images.delete({ where: { id: existing.id } });
+    }
+
+    const newImage = await this.prisma.images.create({
+      data: {
+        movie_id: id,
+        image_type: 'cover',
+        file_path: coverPath,
+      },
+    });
+
+    return { message: 'Cover berhasil diperbarui', data: newImage };
+  }
+
+  async replaceVideo(id: string, videoPath: string, fileSize: bigint) {
+    const existing = await this.prisma.movieFiles.findFirst({
+      where: { movie_id: id },
+    });
+
+    if (existing) {
+      await this.deletePhysicalFiles([existing.file_path]);
+      await this.prisma.movieFiles.delete({ where: { id: existing.id } });
+    }
+
+    const newFile = await this.prisma.movieFiles.create({
+      data: {
+        movie_id: id,
+        file_path: videoPath,
+        file_size: fileSize,
+      },
+    });
+
+    return { message: 'Video berhasil diperbarui', data: newFile };
+  }
+
   async updateMovie(id: string, dto: any) {
     const movie = await this.prisma.movies.findUnique({ where: { id } });
     if (!movie)
       throw new NotFoundException(`Film dengan ID ${id} tidak ditemukan`);
 
-    const relationUpdates: any = {};
     const transactionJobs: any[] = [];
 
     if (dto.director !== undefined) {

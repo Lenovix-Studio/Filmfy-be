@@ -96,7 +96,7 @@ export class FileValidator {
     let headerBuffer = Buffer.alloc(0);
 
     return new Transform({
-      transform(chunk: Buffer, encoding, callback) {
+      transform(chunk: Buffer, _encoding, callback) {
         if (!headerChecked) {
           headerBuffer = Buffer.concat([headerBuffer, chunk]);
           if (headerBuffer.length >= 12) {
