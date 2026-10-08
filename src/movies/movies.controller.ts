@@ -6,10 +6,13 @@ import {
   Body,
   Delete,
   Req,
+  Res,
+  Query,
   BadRequestException,
   NotFoundException,
   Param,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import {
   ApiConsumes,
@@ -17,10 +20,11 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiParam,
 } from '@nestjs/swagger';
 import { type FastifyRequest } from 'fastify';
 import { MoviesService } from './movies.service';
+import { ExtractService } from './extract.service';
+import type { ExtractRequest } from './extract.service';
 import { STORAGE_PATHS } from '../common/constants/storage.constant';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -35,31 +39,50 @@ import sharp from 'sharp';
 @ApiTags('Movies')
 @Controller('movies')
 export class MoviesController {
-  constructor(private readonly moviesService: MoviesService) { }
+  constructor(
+    private readonly moviesService: MoviesService,
+    private readonly extractService: ExtractService,
+  ) {}
 
-  // API for get id movie
-  @Get(':id')
-  @ApiOperation({
-    summary: 'Mendapatkan detail film berdasarkan ID',
-    description:
-      'Mengambil data lengkap film termasuk relasi studio, series, label, genre, director, cast, images, dan files.',
+  @Get('extract/cover')
+  @ApiOperation({ summary: 'Proxy download extracted cover' })
+  async getExtractCover(@Query('url') url: string, @Res() res: any) {
+    if (!url) {
+      throw new BadRequestException('url is required');
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new HttpException('Failed to fetch image', response.status);
+      }
+      const buffer = await response.arrayBuffer();
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      res.header('Content-Type', contentType);
+      res.send(Buffer.from(buffer));
+    } catch (err: any) {
+      throw new HttpException(
+        err.message || 'Error fetching image',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  // API for extract metadata
+  @Post('extract')
+  @ApiOperation({ summary: 'Extract metadata by code' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { code: { type: 'string' } },
+      required: ['code'],
+    },
   })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'UUID dari film yang ingin dicari',
-    example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Berhasil mengambil detail film',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Film dengan ID yang diberikan tidak ditemukan',
-  })
-  async getMovieDetail(@Param('id') id: string) {
-    return this.moviesService.findOne(id);
+  @ApiResponse({ status: 200, description: 'Metadata extracted' })
+  async extractMetadata(@Body() body: ExtractRequest) {
+    if (!body.code) {
+      throw new HttpException('Code is required', HttpStatus.BAD_REQUEST);
+    }
+    return this.extractService.extractMovie(body.code);
   }
 
   // API for get cover, code, title movie
@@ -141,6 +164,7 @@ export class MoviesController {
 
     let tempCoverPath = '';
     let tempVideoPath = '';
+    let tempGalleryPaths: string[] = [];
     let videoExt = '';
     let videoSize = BigInt(0);
 
@@ -171,6 +195,11 @@ export class MoviesController {
 
           const stats = await fs.promises.stat(tempVideoPath);
           videoSize = BigInt(stats.size);
+        } else if (part.fieldname === 'gallery') {
+          const ext = path.extname(part.filename) || '.jpg';
+          const tempPath = path.join(tempDir, `temp_gallery_${tempUuid}${ext}`);
+          await pipeline(part.file, fs.createWriteStream(tempPath));
+          tempGalleryPaths.push(tempPath);
         } else {
           part.file.resume();
         }
@@ -193,6 +222,9 @@ export class MoviesController {
         await fs.promises.unlink(tempCoverPath);
       if (tempVideoPath && fs.existsSync(tempVideoPath))
         await fs.promises.unlink(tempVideoPath);
+      for (const gPath of tempGalleryPaths) {
+        if (fs.existsSync(gPath)) await fs.promises.unlink(gPath);
+      }
     };
 
     const dtoInstance = plainToInstance(CreateMovieDto, fields);
@@ -240,12 +272,34 @@ export class MoviesController {
         videoRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${videoFileName}`;
       }
 
-      const result = await this.moviesService.createMovieWithFiles(
-        dtoInstance,
-        coverRelativePath,
-        videoRelativePath,
-        videoSize,
-      );
+      let result;
+      if (tempGalleryPaths.length > 0) {
+        const galleryFiles = await Promise.all(
+          tempGalleryPaths.map(async (tmp) => {
+            const galleryName = `${movieCode}_gallery_${uuidv4().substring(0, 8)}${path.extname(tmp)}`;
+            const galleryAbs = path.join(targetMovieDir, galleryName);
+            await fs.promises.rename(tmp, galleryAbs);
+            return {
+              file_path: `movies/${year}/${month}/${day}/${movieCode}/${galleryName}`,
+              movie_id: null,
+            };
+          }),
+        );
+        result = await this.moviesService.createMovieWithFiles(
+          dtoInstance,
+          coverRelativePath,
+          videoRelativePath,
+          videoSize,
+          galleryFiles.map((g) => g.file_path),
+        );
+      } else {
+        result = await this.moviesService.createMovieWithFiles(
+          dtoInstance,
+          coverRelativePath,
+          videoRelativePath,
+          videoSize,
+        );
+      }
 
       return {
         statusCode: HttpStatus.CREATED,

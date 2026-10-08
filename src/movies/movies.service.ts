@@ -16,7 +16,7 @@ export class MoviesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   private getAbsolutePath(relativePath: string): string {
     if (!relativePath) return '';
@@ -75,7 +75,7 @@ export class MoviesService {
 
         await this.removeEmptyDirsRecursively(parentDir);
       }
-    } catch { }
+    } catch {}
   }
 
   private async cleanupFiles(filePaths: (string | null | undefined)[]) {
@@ -130,6 +130,7 @@ export class MoviesService {
     coverPath: string,
     movieFilePath: string,
     movieFileSize: bigint,
+    galleryPaths?: string[],
   ) {
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -225,6 +226,18 @@ export class MoviesService {
               file_path: coverPath,
             },
           });
+        }
+
+        if (galleryPaths && galleryPaths.length > 0) {
+          for (const gPath of galleryPaths) {
+            await tx.images.create({
+              data: {
+                movie_id: movie.id,
+                image_type: 'gallery',
+                file_path: gPath,
+              },
+            });
+          }
         }
 
         if (movieFilePath) {
@@ -332,7 +345,7 @@ export class MoviesService {
         code: movie.code,
         title: movie.title,
         coverPath: cover,
-        status: movie.status || "DELETED",
+        status: movie.status || 'DELETED',
       };
     });
   }
