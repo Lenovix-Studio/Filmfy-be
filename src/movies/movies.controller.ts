@@ -14,6 +14,8 @@ import {
   HttpStatus,
   HttpException,
 } from '@nestjs/common';
+import { FileValidator } from '../common/utils/file-validator';
+import { MediaProcessingService } from '../common/services/media-processing.service';
 import {
   ApiConsumes,
   ApiBody,
@@ -42,6 +44,7 @@ export class MoviesController {
   constructor(
     private readonly moviesService: MoviesService,
     private readonly extractService: ExtractService,
+    private readonly mediaProcessingService: MediaProcessingService,
   ) {}
 
   @Get('extract/cover')
@@ -173,6 +176,7 @@ export class MoviesController {
         const tempUuid = uuidv4();
 
         if (part.fieldname === 'cover') {
+          FileValidator.validateImageMime(part.mimetype);
           tempCoverPath = path.join(tempDir, `temp_cover_${tempUuid}.webp`);
 
           const imageTransformer = sharp()
@@ -181,24 +185,36 @@ export class MoviesController {
 
           await pipeline(
             part.file,
+            FileValidator.createMagicBytesValidator('image'),
             imageTransformer,
             fs.createWriteStream(tempCoverPath),
           );
         } else if (part.fieldname === 'video') {
+          FileValidator.validateVideoMime(part.mimetype);
           videoExt = path.extname(part.filename) || '.mp4';
           tempVideoPath = path.join(
             tempDir,
             `temp_video_${tempUuid}${videoExt}`,
           );
 
-          await pipeline(part.file, fs.createWriteStream(tempVideoPath));
+          await pipeline(
+            part.file,
+            FileValidator.createMagicBytesValidator('video'),
+            fs.createWriteStream(tempVideoPath),
+          );
 
           const stats = await fs.promises.stat(tempVideoPath);
           videoSize = BigInt(stats.size);
+          FileValidator.validateVideoSize(Number(videoSize));
         } else if (part.fieldname === 'gallery') {
+          FileValidator.validateImageMime(part.mimetype);
           const ext = path.extname(part.filename) || '.jpg';
           const tempPath = path.join(tempDir, `temp_gallery_${tempUuid}${ext}`);
-          await pipeline(part.file, fs.createWriteStream(tempPath));
+          await pipeline(
+            part.file,
+            FileValidator.createMagicBytesValidator('image'),
+            fs.createWriteStream(tempPath),
+          );
           tempGalleryPaths.push(tempPath);
         } else {
           part.file.resume();
@@ -273,12 +289,14 @@ export class MoviesController {
       }
 
       let result;
+      let galleryAbsPaths: string[] = [];
       if (tempGalleryPaths.length > 0) {
         const galleryFiles = await Promise.all(
           tempGalleryPaths.map(async (tmp) => {
             const galleryName = `${movieCode}_gallery_${uuidv4().substring(0, 8)}${path.extname(tmp)}`;
             const galleryAbs = path.join(targetMovieDir, galleryName);
             await fs.promises.rename(tmp, galleryAbs);
+            galleryAbsPaths.push(galleryAbs);
             return {
               file_path: `movies/${year}/${month}/${day}/${movieCode}/${galleryName}`,
               movie_id: null,
@@ -300,6 +318,12 @@ export class MoviesController {
           videoSize,
         );
       }
+
+      this.mediaProcessingService.processMediaAsync({
+        movieId: result.id,
+        coverPath: coverAbsolutePath,
+        galleryPaths: galleryAbsPaths,
+      });
 
       return {
         statusCode: HttpStatus.CREATED,

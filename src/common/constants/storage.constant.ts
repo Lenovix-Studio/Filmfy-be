@@ -17,10 +17,17 @@ const BASE_STORAGE = process.env.STORAGE_PATH
 export const STORAGE_PATHS = {
   COVERS: path.join(BASE_STORAGE, 'covers'),
   MOVIES: path.join(BASE_STORAGE, 'movies'),
+  TEMP: path.join(BASE_STORAGE, 'temp'),
 };
 
 export function ensureStorageDirectoriesExist() {
-  Object.values(STORAGE_PATHS).forEach((dirPath) => {
+  const paths = [
+    BASE_STORAGE,
+    STORAGE_PATHS.COVERS,
+    STORAGE_PATHS.MOVIES,
+    STORAGE_PATHS.TEMP,
+  ];
+  paths.forEach((dirPath) => {
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
     }

@@ -57,6 +57,12 @@ async function bootstrap() {
   await app.register(fastifyStatic as any, {
     root: path.resolve(storagePath),
     prefix: '/storage/',
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.mp4') || filePath.endsWith('.mkv')) {
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
   });
 
   const port = configService.get<number>('PORT');
