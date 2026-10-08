@@ -324,7 +324,27 @@ export class MoviesController {
     }
   }
 
-  // API for reset
+  @Get('favorites')
+  @ApiOperation({ summary: 'Mendapatkan daftar film favorit' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Berhasil mengambil daftar favorit',
+  })
+  async getFavorites() {
+    const data = await this.moviesService.findFavorites();
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Berhasil mengambil daftar favorit',
+      data,
+    };
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get detail film by ID' })
+  async getMovieDetail(@Param('id') id: string) {
+    return this.moviesService.findOne(id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update metadata film' })
   async updateMovie(@Param('id') id: string, @Body() dto: UpdateMovieDto) {
@@ -415,21 +435,6 @@ export class MoviesController {
   @ApiOperation({ summary: 'Toggle status favorit film' })
   async toggleFavorite(@Param('id') id: string) {
     return this.moviesService.toggleFavorite(id);
-  }
-
-  @Get('favorites')
-  @ApiOperation({ summary: 'Mendapatkan daftar film favorit' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Berhasil mengambil daftar favorit',
-  })
-  async getFavorites() {
-    const data = await this.moviesService.findFavorites();
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'Berhasil mengambil daftar favorit',
-      data,
-    };
   }
 
   @Delete('favorites')
