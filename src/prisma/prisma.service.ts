@@ -4,6 +4,11 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
+const globalForPrisma = global as unknown as {
+  prismaPool?: Pool;
+  prismaAdapter?: PrismaPg;
+};
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
@@ -18,10 +23,16 @@ export class PrismaService
       );
     }
 
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
+    if (!globalForPrisma.prismaPool) {
+      globalForPrisma.prismaPool = new Pool({
+        connectionString,
+        max: 10,
+        idleTimeoutMillis: 30000,
+      });
+      globalForPrisma.prismaAdapter = new PrismaPg(globalForPrisma.prismaPool);
+    }
 
-    super({ adapter });
+    super({ adapter: globalForPrisma.prismaAdapter });
   }
 
   async onModuleInit() {
@@ -32,3 +43,4 @@ export class PrismaService
     await this.$disconnect();
   }
 }
+
