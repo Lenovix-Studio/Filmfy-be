@@ -1,6 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { Module } from '@nestjs/common';
+import { CastsModule } from './casts/casts.module';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
@@ -48,6 +49,7 @@ if (!fs.existsSync(logDir)) {
     }),
     PrismaModule,
     MoviesModule,
+    CastsModule,
     CommonCodesModule,
     SettingsModule,
   ],
