@@ -63,7 +63,10 @@ export class CreateMovieDto {
   @IsString()
   release_date?: string;
 
-  @ApiPropertyOptional({ example: 120, description: 'Durasi dalam menit (auto-calc dari video)' })
+  @ApiPropertyOptional({
+    example: 120,
+    description: 'Durasi dalam menit (auto-calc dari video)',
+  })
   @IsOptional()
   @Transform(({ value }) => {
     if (value === '' || value === null || value === undefined) return undefined;

@@ -14,8 +14,6 @@ import {
   HttpStatus,
   HttpException,
 } from '@nestjs/common';
-import { FileValidator } from '../common/utils/file-validator';
-import { MediaProcessingService } from '../common/services/media-processing.service';
 import {
   ApiConsumes,
   ApiBody,
@@ -24,19 +22,21 @@ import {
   ApiResponse,
 } from '@nestjs/swagger';
 import { type FastifyRequest } from 'fastify';
-import { MoviesService } from './movies.service';
-import { ExtractService } from './extract.service';
-import type { ExtractRequest } from './extract.service';
-import { STORAGE_PATHS } from '../common/constants/storage.constant';
+import sharp from 'sharp';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { FileValidator } from '../common/utils/file-validator';
+import { MediaProcessingService } from '../common/services/media-processing.service';
+import { MoviesService } from './movies.service';
+import { ExtractService } from './extract.service';
+import { STORAGE_PATHS } from '../common/constants/storage.constant';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
-import sharp from 'sharp';
+import type { ExtractRequest } from 'lib/constant';
 
 @ApiTags('Movies')
 @Controller('movies')
@@ -405,7 +405,13 @@ export class MoviesController {
         const year = now.getFullYear().toString();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        const targetDir = path.join(STORAGE_PATHS.MOVIES, year, month, day, movie.code);
+        const targetDir = path.join(
+          STORAGE_PATHS.MOVIES,
+          year,
+          month,
+          day,
+          movie.code,
+        );
         await fs.promises.mkdir(targetDir, { recursive: true });
 
         const fileName = `${movie.code}_cover_${uuidv4().substring(0, 8)}.webp`;
@@ -446,7 +452,10 @@ export class MoviesController {
         FileValidator.validateVideoMime(part.mimetype);
         const ext = path.extname(part.filename) || '.mp4';
         const tempUuid = uuidv4();
-        const tempVideoPath = path.join(tempDir, `temp_video_${tempUuid}${ext}`);
+        const tempVideoPath = path.join(
+          tempDir,
+          `temp_video_${tempUuid}${ext}`,
+        );
 
         await pipeline(
           part.file,
@@ -462,7 +471,13 @@ export class MoviesController {
         const year = now.getFullYear().toString();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
-        const targetDir = path.join(STORAGE_PATHS.MOVIES, year, month, day, movie.code);
+        const targetDir = path.join(
+          STORAGE_PATHS.MOVIES,
+          year,
+          month,
+          day,
+          movie.code,
+        );
         await fs.promises.mkdir(targetDir, { recursive: true });
 
         const fileName = `${movie.code}_video_${uuidv4().substring(0, 8)}${ext}`;

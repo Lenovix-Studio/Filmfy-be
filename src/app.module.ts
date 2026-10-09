@@ -1,29 +1,30 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { Module } from '@nestjs/common';
-import { CastsModule } from './casts/casts.module';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
+import { CastsModule } from './casts/casts.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { MoviesModule } from './movies/movies.module';
 import { CommonCodesModule } from './common-codes/common-codes.module';
 import { SettingsModule } from './settings/settings.module';
+import { APP_ENV, NODE_ENV } from '../lib/constant';
+import { ensureStorageDirectoriesExist } from './common/constants/storage.constant';
 
 const logDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
+ensureStorageDirectoriesExist();
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
-        process.env.NODE_ENV === 'development' || process.env.APP_ENV === 'dev'
-          ? '.env.dev'
-          : '.env',
+        NODE_ENV === 'development' || APP_ENV === 'dev' ? '.env.dev' : '.env',
     }),
     LoggerModule.forRoot({
       pinoHttp: {

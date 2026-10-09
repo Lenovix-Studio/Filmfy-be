@@ -1,14 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
+import { ALLOWED_IMAGE_MIMES, ALLOWED_VIDEO_MIMES } from 'lib/constant';
 import { Transform } from 'stream';
-
-const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_VIDEO_MIMES = [
-  'video/mp4',
-  'video/x-matroska',
-  'video/quicktime',
-  'video/x-msvideo',
-  'video/webm',
-];
 
 export class FileValidator {
   static readonly MAX_IMAGE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -46,11 +38,15 @@ export class FileValidator {
     }
   }
 
-  static checkMagicBytes(buffer: Buffer, expectedCategory: 'image' | 'video'): boolean {
+  static checkMagicBytes(
+    buffer: Buffer,
+    expectedCategory: 'image' | 'video',
+  ): boolean {
     if (!buffer || buffer.length < 4) return false;
 
     if (expectedCategory === 'image') {
-      const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+      const isJpeg =
+        buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
       const isPng =
         buffer[0] === 0x89 &&
         buffer[1] === 0x50 &&

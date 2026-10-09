@@ -33,7 +33,10 @@ export class MediaProcessingService {
           status: 'completed',
         });
       } catch (error) {
-        console.error(`Media processing failed for movie ${payload.movieId}`, error);
+        console.error(
+          `Media processing failed for movie ${payload.movieId}`,
+          error,
+        );
         this.eventEmitter.emit('media.processed', {
           movieId: payload.movieId,
           status: 'failed',
@@ -54,7 +57,9 @@ export class MediaProcessingService {
     try {
       const metadata = await sharp(filePath).metadata();
       const needsOptimization =
-        metadata.size && metadata.size > 200 * 1024 && metadata.format !== 'webp';
+        metadata.size &&
+        metadata.size > 200 * 1024 &&
+        metadata.format !== 'webp';
 
       if (needsOptimization) {
         const maxWidth = type === 'cover' ? 1200 : 1920;

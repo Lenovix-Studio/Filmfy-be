@@ -1,28 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
-export interface ExtractRequest {
-  code: string;
-}
-
-export interface ExtractResponse {
-  code: string;
-  title: string;
-  overview: string;
-  director: string;
-  studio: string;
-  label: string;
-  country: string;
-  language: string;
-  release_date: string;
-  cast: string;
-  genres: string;
-  series: string;
-  runtime_minutes: number;
-  rating: number;
-  cover_url: string;
-  gallery_urls: string[];
-}
+import { ExtractResponse } from 'lib/constant';
 
 @Injectable()
 export class ExtractService {

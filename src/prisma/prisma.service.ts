@@ -3,6 +3,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { DATABASE_URL } from 'lib/constant';
 
 const globalForPrisma = global as unknown as {
   prismaPool?: Pool;
@@ -15,7 +16,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = DATABASE_URL;
 
     if (!connectionString) {
       throw new Error(
@@ -43,4 +44,3 @@ export class PrismaService
     await this.$disconnect();
   }
 }
-

@@ -18,7 +18,9 @@ export class SettingsController {
 
   @Post('logs')
   @HttpCode(200)
-  async createLog(@Body() body: { level: string; message: string; source?: string }) {
+  async createLog(
+    @Body() body: { level: string; message: string; source?: string },
+  ) {
     return this.settingsService.createLog(body);
   }
 

@@ -5,13 +5,14 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
+import { PORT } from '../lib/constant';
+import { STORAGE_PATHS } from './common/constants/storage.constant';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -24,7 +25,6 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
-  const configService = app.get(ConfigService);
 
   app.enableCors({
     origin: true,
@@ -50,12 +50,10 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
-  const storagePath =
-    configService.get<string>('STORAGE_PATH') ||
-    path.join(process.cwd(), 'infra/storage/dev');
+  const baseStoragePath = path.resolve(STORAGE_PATHS.COVERS, '..');
 
   await app.register(fastifyStatic as any, {
-    root: path.resolve(storagePath),
+    root: baseStoragePath,
     prefix: '/storage/',
     setHeaders: (res, filePath) => {
       if (filePath.endsWith('.mp4') || filePath.endsWith('.mkv')) {
@@ -65,9 +63,9 @@ async function bootstrap() {
     },
   });
 
-  const port = configService.get<number>('PORT');
+  const port = PORT || 4000;
 
-  await app.listen(port!, '0.0.0.0');
+  await app.listen(port, '0.0.0.0');
 
   console.log(`Application is running on: http://localhost:${port}/docs`);
 }

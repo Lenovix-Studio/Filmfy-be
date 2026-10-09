@@ -25,7 +25,8 @@
     "db:studio:dev": "dotenv -e .env.dev -- prisma studio",
     "db:push:prod": "dotenv -e .env -- prisma db push",
     "db:gen:prod": "dotenv -e .env -- bunx prisma generate",
-    "db:studio:prod": "dotenv -e .env -- prisma studio"
+    "db:studio:prod": "dotenv -e .env -- prisma studio",
+    "db:prod": "dotenv -e .env -- prisma db push && dotenv -e .env -- bunx prisma generate"
   },
   "dependencies": {
     "@fastify/multipart": "^10.1.0",

@@ -97,7 +97,13 @@ export class SettingsService {
     }
   }
 
-  async createLog(body: { level: string; message: string; source?: string; request?: any; response?: any }) {
+  async createLog(body: {
+    level: string;
+    message: string;
+    source?: string;
+    request?: any;
+    response?: any;
+  }) {
     try {
       await this.prisma.systemLogs.create({
         data: {
