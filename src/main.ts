@@ -11,8 +11,8 @@ import fastifyMultipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger } from 'nestjs-pino';
-import { PORT } from '../lib/constant';
 import { STORAGE_PATHS } from './common/constants/storage.constant';
+import { PORT } from '@/common/constants/constant';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(

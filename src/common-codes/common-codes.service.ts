@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateCodeTypeDto,
   UpdateCodeTypeDto,
   CreateCodeDetailDto,
   UpdateCodeDetailDto,
 } from './dto/common-code.dto';
+import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class CommonCodesService {

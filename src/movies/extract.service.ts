@@ -1,6 +1,6 @@
+import { ExtractResponse } from '@/common/constants/constant';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ExtractResponse } from 'lib/constant';
 
 @Injectable()
 export class ExtractService {

@@ -1,5 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
-import { ALLOWED_IMAGE_MIMES, ALLOWED_VIDEO_MIMES } from 'lib/constant';
+import {
+  ALLOWED_IMAGE_MIMES,
+  ALLOWED_VIDEO_MIMES,
+} from '@/common/constants/constant';
 import { Transform } from 'stream';
 
 export class FileValidator {

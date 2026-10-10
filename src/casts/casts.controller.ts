@@ -4,7 +4,7 @@ import type { FastifyRequest } from 'fastify';
 import * as fs from 'fs';
 import * as path from 'path';
 import { pipeline } from 'stream/promises';
-import { STORAGE_PATH } from '../../lib/constant';
+import { STORAGE_PATH } from '@/common/constants/constant';
 
 @Controller('casts')
 export class CastsController {

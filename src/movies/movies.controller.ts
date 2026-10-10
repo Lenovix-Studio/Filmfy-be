@@ -29,14 +29,14 @@ import { pipeline } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { FileValidator } from '../common/utils/file-validator';
-import { MediaProcessingService } from '../common/services/media-processing.service';
+import { MediaProcessingService } from '@/common/services/media-processing.service';
 import { MoviesService } from './movies.service';
 import { ExtractService } from './extract.service';
-import { STORAGE_PATHS } from '../common/constants/storage.constant';
+import { STORAGE_PATHS } from '@/common/constants/storage.constant';
 import { CreateMovieDto } from './dto/create-movie.dto';
 import { UpdateMovieDto } from './dto/update-movie.dto';
-import type { ExtractRequest } from 'lib/constant';
+import type { ExtractRequest } from '@/common/constants/constant';
+import { FileValidator } from '@/common/utils/file-validator';
 
 @ApiTags('Movies')
 @Controller('movies')

@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
-import { APP_ENV, NODE_ENV, STORAGE_PATH } from '../../../lib/constant';
+import { APP_ENV, NODE_ENV, STORAGE_PATH } from './constant';
 
 const ROOT_PROJECT = path.resolve(process.cwd(), '..');
 

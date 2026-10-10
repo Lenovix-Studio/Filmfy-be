@@ -1,4 +1,3 @@
-// @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
@@ -26,11 +25,14 @@ export default tseslint.config(
   },
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": "error",
-      "no-unused-vars": "error",
-      "@typescript-eslint/no-unused-vars-experimental": "error",
-      "@typescript-eslint/no-unused-vars": ["error", { "args": "after-used", "ignoreRestSiblings": true }],
-      "no-unused-vars": ["error", { "args": "after-used", "ignoreRestSiblings": true }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { args: 'after-used', ignoreRestSiblings: true },
+      ],
+      'no-unused-vars': [
+        'error',
+        { args: 'after-used', ignoreRestSiblings: true },
+      ],
     },
   },
 );

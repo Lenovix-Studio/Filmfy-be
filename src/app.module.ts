@@ -10,8 +10,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { MoviesModule } from './movies/movies.module';
 import { CommonCodesModule } from './common-codes/common-codes.module';
 import { SettingsModule } from './settings/settings.module';
-import { APP_ENV, NODE_ENV } from '../lib/constant';
 import { ensureStorageDirectoriesExist } from './common/constants/storage.constant';
+import { APP_ENV, NODE_ENV } from './common/constants/constant';
 
 const logDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logDir)) {
