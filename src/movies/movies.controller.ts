@@ -53,19 +53,36 @@ export class MoviesController {
     if (!url) {
       throw new BadRequestException('url is required');
     }
+
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          Referer: 'https://www.dmm.co.jp/',
+        },
+      });
+
       if (!response.ok) {
-        throw new HttpException('Failed to fetch image', response.status);
+        throw new HttpException(
+          `Failed to fetch image from target: ${response.statusText}`,
+          response.status,
+        );
       }
+
       const buffer = await response.arrayBuffer();
       const contentType = response.headers.get('content-type') || 'image/jpeg';
+
       res.header('Content-Type', contentType);
-      res.send(Buffer.from(buffer));
+      return res.send(Buffer.from(buffer));
     } catch (err: any) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+
       throw new HttpException(
         err.message || 'Error fetching image',
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_GATEWAY,
       );
     }
   }
