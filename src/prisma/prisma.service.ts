@@ -14,7 +14,7 @@ const globalForPrisma = global as unknown as {
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
-{
+{ [key: string]: any;
   constructor() {
     const connectionString = DATABASE_URL;
 
@@ -37,10 +37,14 @@ export class PrismaService
   }
 
   async onModuleInit() {
-    await this.$connect();
+    await (this as any).$connect();
   }
 
   async onModuleDestroy() {
-    await this.$disconnect();
+    await (this as any).$disconnect();
+    if (globalForPrisma.prismaPool) {
+      await globalForPrisma.prismaPool.end();
+      globalForPrisma.prismaPool = undefined;
+    }
   }
 }

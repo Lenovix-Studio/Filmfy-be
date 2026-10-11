@@ -32,7 +32,7 @@ export class CastsService {
     };
   }
 
-  async update(id: string, data: { name?: string; bio?: string }) {
+  async update(id: string, data: { name?: string; display_name?: string; other_name?: string; bio?: string }) {
     return this.prisma.casts.update({
       where: { id },
       data,

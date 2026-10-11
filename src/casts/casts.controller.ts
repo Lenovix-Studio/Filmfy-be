@@ -18,7 +18,7 @@ export class CastsController {
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() data: { name?: string; bio?: string },
+    @Body() data: { name?: string; display_name?: string; other_name?: string; bio?: string },
   ) {
     return this.castsService.update(id, data);
   }
