@@ -76,6 +76,26 @@ export class MoviesController {
       res.header('Content-Type', contentType);
       return res.send(Buffer.from(buffer));
     } catch (err: any) {
+      try {
+        const { execFile } = await import('child_process');
+        const buffer = await new Promise<Buffer>((resolve, reject) => {
+          execFile(
+            'curl.exe',
+            ['-s', '-L', url],
+            { encoding: 'buffer', maxBuffer: 20 * 1024 * 1024 },
+            (error, stdout) => {
+              if (error) return reject(error);
+              resolve(stdout);
+            },
+          );
+        });
+
+        if (buffer && buffer.length > 0) {
+          res.header('Content-Type', 'image/jpeg');
+          return res.send(buffer);
+        }
+      } catch {}
+
       if (err instanceof HttpException) {
         throw err;
       }
