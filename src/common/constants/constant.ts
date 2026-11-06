@@ -6,8 +6,15 @@ export const NODE_ENV = process.env.NODE_ENV;
 export const DATABASE_URL = process.env.DATABASE_URL;
 export const STORAGE_PATH = process.env.STORAGE_PATH;
 
-// Movies
+export const ALLOWED_IMAGE_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+export const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm'];
 
+// Movies
 export interface ExtractRequest {
   code: string;
 }
@@ -29,13 +36,3 @@ export interface ExtractResponse {
   cover_url: string;
   gallery_urls: string[];
 }
-
-// Common Code
-export const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
-export const ALLOWED_VIDEO_MIMES = [
-  'video/mp4',
-  'video/x-matroska',
-  'video/quicktime',
-  'video/x-msvideo',
-  'video/webm',
-];

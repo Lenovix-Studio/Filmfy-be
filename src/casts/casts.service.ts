@@ -5,6 +5,29 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 export class CastsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async findAll() {
+    const casts = await this.prisma.casts.findMany({
+      include: {
+        _count: {
+          select: { movie_casts: true },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return casts.map((c) => ({
+      id: c.id,
+      name: c.name,
+      display_name: c.display_name,
+      other_name: c.other_name,
+      bio: c.bio,
+      profile_path: c.profile_path,
+      movies_count: c._count.movie_casts,
+    }));
+  }
+
   async findOne(id: string) {
     const cast = await this.prisma.casts.findUnique({
       where: { id },
@@ -32,7 +55,15 @@ export class CastsService {
     };
   }
 
-  async update(id: string, data: { name?: string; display_name?: string; other_name?: string; bio?: string }) {
+  async update(
+    id: string,
+    data: {
+      name?: string;
+      display_name?: string;
+      other_name?: string;
+      bio?: string;
+    },
+  ) {
     return this.prisma.casts.update({
       where: { id },
       data,

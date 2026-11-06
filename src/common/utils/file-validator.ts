@@ -66,11 +66,20 @@ export class FileValidator {
         buffer[10] === 0x42 &&
         buffer[11] === 0x50;
 
-      return isJpeg || isPng || isWebp;
+      const isGif =
+        buffer.length >= 6 &&
+        buffer[0] === 0x47 &&
+        buffer[1] === 0x49 &&
+        buffer[2] === 0x46 &&
+        buffer[3] === 0x38 &&
+        (buffer[4] === 0x37 || buffer[4] === 0x39) &&
+        buffer[5] === 0x61;
+
+      return isJpeg || isPng || isWebp || isGif;
     }
 
     if (expectedCategory === 'video') {
-      const isMkvOrWebm =
+      const isWebm =
         buffer[0] === 0x1a &&
         buffer[1] === 0x45 &&
         buffer[2] === 0xdf &&
@@ -82,7 +91,7 @@ export class FileValidator {
         buffer[6] === 0x79 &&
         buffer[7] === 0x70;
 
-      return isMkvOrWebm || isMp4;
+      return isMp4 || isWebm;
     }
 
     return false;

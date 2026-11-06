@@ -10,6 +10,11 @@ import { STORAGE_PATH } from '@/common/constants/constant';
 export class CastsController {
   constructor(private readonly castsService: CastsService) {}
 
+  @Get()
+  async findAll() {
+    return this.castsService.findAll();
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.castsService.findOne(id);
@@ -18,7 +23,13 @@ export class CastsController {
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() data: { name?: string; display_name?: string; other_name?: string; bio?: string },
+    @Body()
+    data: {
+      name?: string;
+      display_name?: string;
+      other_name?: string;
+      bio?: string;
+    },
   ) {
     return this.castsService.update(id, data);
   }

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { EventEmitter } from 'events';
-import sharp from 'sharp';
 import * as fs from 'fs';
 
 export interface MediaProcessingPayload {
@@ -47,32 +46,10 @@ export class MediaProcessingService {
   }
   private async optimizeImage(
     filePath: string,
-    type: 'cover' | 'gallery',
+    _type: 'cover' | 'gallery',
   ): Promise<void> {
     if (!fs.existsSync(filePath)) return;
-
-    const stats = await fs.promises.stat(filePath);
-    if (stats.size === 0) return;
-
-    try {
-      const metadata = await sharp(filePath).metadata();
-      const needsOptimization =
-        metadata.size &&
-        metadata.size > 200 * 1024 &&
-        metadata.format !== 'webp';
-
-      if (needsOptimization) {
-        const maxWidth = type === 'cover' ? 1200 : 1920;
-        await sharp(filePath)
-          .resize(maxWidth, undefined, { withoutEnlargement: true })
-          .webp({ quality: 80 })
-          .toFile(filePath + '.tmp');
-
-        await fs.promises.rename(filePath + '.tmp', filePath);
-      }
-    } catch (error) {
-      console.error(`Image optimization failed for ${filePath}:`, error);
-    }
+    return;
   }
 
   on(event: string, listener: (...args: any[]) => void) {

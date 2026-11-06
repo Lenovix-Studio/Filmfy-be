@@ -216,9 +216,12 @@ export class MoviesController {
           FileValidator.validateImageMime(part.mimetype);
           tempCoverPath = path.join(tempDir, `temp_cover_${tempUuid}.webp`);
 
-          const imageTransformer = sharp()
-            .resize({ width: 800, withoutEnlargement: true })
-            .webp({ quality: 80 });
+          const isGif =
+            part.mimetype === 'image/gif' ||
+            part.filename?.toLowerCase().endsWith('.gif');
+          const imageTransformer = isGif
+            ? sharp({ animated: true }).webp({ quality: 90, effort: 4 })
+            : sharp().rotate().webp({ quality: 94, effort: 4 });
 
           await pipeline(
             part.file,
@@ -245,11 +248,18 @@ export class MoviesController {
           FileValidator.validateVideoSize(Number(videoSize));
         } else if (part.fieldname === 'gallery') {
           FileValidator.validateImageMime(part.mimetype);
-          const ext = path.extname(part.filename) || '.jpg';
-          const tempPath = path.join(tempDir, `temp_gallery_${tempUuid}${ext}`);
+          const tempPath = path.join(tempDir, `temp_gallery_${tempUuid}.webp`);
+          const isGif =
+            part.mimetype === 'image/gif' ||
+            part.filename?.toLowerCase().endsWith('.gif');
+          const galleryTransformer = isGif
+            ? sharp({ animated: true }).webp({ quality: 90, effort: 4 })
+            : sharp().rotate().webp({ quality: 94, effort: 4 });
+
           await pipeline(
             part.file,
             FileValidator.createMagicBytesValidator('image'),
+            galleryTransformer,
             fs.createWriteStream(tempPath),
           );
           tempGalleryPaths.push(tempPath);
@@ -318,6 +328,17 @@ export class MoviesController {
       if (tempCoverPath) {
         await fs.promises.rename(tempCoverPath, coverAbsolutePath);
         coverRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${coverFileName}`;
+      } else {
+        const defaultCoverSrc = path.resolve(
+          process.cwd(),
+          '../infra/storage/default/cover-default.jpg',
+        );
+        if (fs.existsSync(defaultCoverSrc)) {
+          await sharp(defaultCoverSrc)
+            .webp({ quality: 94, effort: 4 })
+            .toFile(coverAbsolutePath);
+          coverRelativePath = `movies/${year}/${month}/${day}/${movieCode}/${coverFileName}`;
+        }
       }
 
       if (tempVideoPath) {
@@ -428,8 +449,8 @@ export class MoviesController {
         const tempCoverPath = path.join(tempDir, `temp_cover_${tempUuid}.webp`);
 
         const imageTransformer = sharp()
-          .resize({ width: 800, withoutEnlargement: true })
-          .webp({ quality: 80 });
+          .rotate()
+          .webp({ quality: 94, effort: 4 });
 
         await pipeline(
           part.file,
@@ -576,8 +597,8 @@ export class MoviesController {
         const absolutePath = path.join(targetMovieDir, fileName);
 
         const imageTransformer = sharp()
-          .resize({ width: 1280, withoutEnlargement: true })
-          .webp({ quality: 85 });
+          .rotate()
+          .webp({ quality: 94, effort: 4 });
 
         await pipeline(
           part.file,
