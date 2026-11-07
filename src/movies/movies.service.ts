@@ -557,6 +557,7 @@ export class MoviesService {
           title: dto.title,
           code: dto.code,
           overview: dto.overview,
+          status: dto.status,
         },
       }),
     );

@@ -448,9 +448,12 @@ export class MoviesController {
         const tempUuid = uuidv4();
         const tempCoverPath = path.join(tempDir, `temp_cover_${tempUuid}.webp`);
 
-        const imageTransformer = sharp()
-          .rotate()
-          .webp({ quality: 94, effort: 4 });
+        const isGif =
+          part.mimetype === 'image/gif' ||
+          part.filename?.toLowerCase().endsWith('.gif');
+        const imageTransformer = isGif
+          ? sharp({ animated: true }).webp({ quality: 90, effort: 4 })
+          : sharp().rotate().webp({ quality: 94, effort: 4 });
 
         await pipeline(
           part.file,
@@ -596,9 +599,12 @@ export class MoviesController {
         const fileName = `${movie.code}_screenshot_${shortUuid}.webp`;
         const absolutePath = path.join(targetMovieDir, fileName);
 
-        const imageTransformer = sharp()
-          .rotate()
-          .webp({ quality: 94, effort: 4 });
+        const isGif =
+          part.mimetype === 'image/gif' ||
+          part.filename?.toLowerCase().endsWith('.gif');
+        const imageTransformer = isGif
+          ? sharp({ animated: true }).webp({ quality: 90, effort: 4 })
+          : sharp().rotate().webp({ quality: 94, effort: 4 });
 
         await pipeline(
           part.file,
