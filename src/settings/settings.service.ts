@@ -61,6 +61,50 @@ export class SettingsService {
     }
   }
 
+  async clearTempFolders() {
+    const rootDir = path.resolve(process.cwd(), '..');
+    const targetDirs = [
+      path.join(rootDir, 'infra', 'storage', 'dev', 'temp'),
+      path.join(rootDir, 'infra', 'storage', 'prod', 'temp'),
+      path.join(rootDir, 'py-filmfy', 'temp_images'),
+      path.join(rootDir, 'py-filmfy', 'temp_trailers'),
+    ];
+
+    let totalDeleted = 0;
+    const details: { path: string; deleted: number; status: string }[] = [];
+
+    for (const dir of targetDirs) {
+      try {
+        const entries = await fs.readdir(dir);
+        let count = 0;
+        for (const entry of entries) {
+          const entryPath = path.join(dir, entry);
+          await fs.rm(entryPath, { recursive: true, force: true });
+          count++;
+        }
+        totalDeleted += count;
+        details.push({ path: dir, deleted: count, status: 'cleared' });
+      } catch (err: any) {
+        if (err.code === 'ENOENT') {
+          await fs.mkdir(dir, { recursive: true });
+          details.push({ path: dir, deleted: 0, status: 'created' });
+        } else {
+          details.push({
+            path: dir,
+            deleted: 0,
+            status: `error: ${err.message}`,
+          });
+        }
+      }
+    }
+
+    return {
+      message: `Cache dan temporary folder berhasil dibersihkan (${totalDeleted} file/folder dihapus).`,
+      totalDeleted,
+      details,
+    };
+  }
+
   async getLogs() {
     try {
       const logs = await this.prisma.systemLogs.findMany({

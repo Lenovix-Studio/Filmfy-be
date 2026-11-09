@@ -11,6 +11,12 @@ export class SettingsController {
     return this.settingsService.resetData();
   }
 
+  @Post('clear-temp')
+  @HttpCode(200)
+  async clearTempFolders() {
+    return this.settingsService.clearTempFolders();
+  }
+
   @Get('logs')
   async getLogs() {
     return this.settingsService.getLogs();
