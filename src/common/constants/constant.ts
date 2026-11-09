@@ -16,7 +16,8 @@ export const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm'];
 
 // Movies
 export interface ExtractRequest {
-  code: string;
+  code?: string;
+  trailer_url?: string;
 }
 export interface ExtractResponse {
   code: string;
@@ -35,4 +36,5 @@ export interface ExtractResponse {
   rating: number;
   cover_url: string;
   gallery_urls: string[];
+  trailer_url?: string;
 }

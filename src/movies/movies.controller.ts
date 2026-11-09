@@ -81,7 +81,7 @@ export class MoviesController {
         const buffer = await new Promise<Buffer>((resolve, reject) => {
           execFile(
             'curl.exe',
-            ['-s', '-L', url],
+            ['-s', '-L', '-e', 'https://www.dmm.co.jp/', url],
             { encoding: 'buffer', maxBuffer: 20 * 1024 * 1024 },
             (error, stdout) => {
               if (error) return reject(error);
@@ -107,22 +107,60 @@ export class MoviesController {
     }
   }
 
+  @Get('extract/trailer')
+  @ApiOperation({ summary: 'Proxy download extracted trailer video' })
+  async getExtractTrailer(@Query('url') url: string, @Res() res: any) {
+    if (!url) {
+      throw new BadRequestException('url is required');
+    }
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new HttpException(
+          `Failed to fetch trailer video: ${response.statusText}`,
+          response.status,
+        );
+      }
+
+      const buffer = await response.arrayBuffer();
+      const nodeBuffer = Buffer.from(buffer);
+      res.header('Content-Type', 'video/mp4');
+      res.header('Content-Length', nodeBuffer.length.toString());
+      res.header('Accept-Ranges', 'bytes');
+      return res.send(nodeBuffer);
+    } catch (err: any) {
+      if (err instanceof HttpException) {
+        throw err;
+      }
+      throw new HttpException(
+        err.message || 'Error fetching trailer',
+        HttpStatus.BAD_GATEWAY,
+      );
+    }
+  }
+
   // API for extract metadata
   @Post('extract')
-  @ApiOperation({ summary: 'Extract metadata by code' })
+  @ApiOperation({ summary: 'Extract metadata by code or trailer url' })
   @ApiBody({
     schema: {
       type: 'object',
-      properties: { code: { type: 'string' } },
-      required: ['code'],
+      properties: {
+        code: { type: 'string' },
+        trailer_url: { type: 'string' },
+      },
     },
   })
   @ApiResponse({ status: 200, description: 'Metadata extracted' })
   async extractMetadata(@Body() body: ExtractRequest) {
-    if (!body.code) {
-      throw new HttpException('Code is required', HttpStatus.BAD_REQUEST);
+    if (!body.code && !body.trailer_url) {
+      throw new HttpException(
+        'Code or trailer_url is required',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-    return this.extractService.extractMovie(body.code);
+    return this.extractService.extractMovie(body.code, body.trailer_url);
   }
 
   // API for get cover, code, title movie
