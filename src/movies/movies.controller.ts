@@ -149,6 +149,7 @@ export class MoviesController {
       properties: {
         code: { type: 'string' },
         trailer_url: { type: 'string' },
+        headless: { type: 'boolean' },
       },
     },
   })
@@ -160,7 +161,11 @@ export class MoviesController {
         HttpStatus.BAD_REQUEST,
       );
     }
-    return this.extractService.extractMovie(body.code, body.trailer_url);
+    return this.extractService.extractMovie(
+      body.code,
+      body.trailer_url,
+      body.headless,
+    );
   }
 
   // API for get cover, code, title movie

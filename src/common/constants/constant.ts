@@ -18,6 +18,7 @@ export const ALLOWED_VIDEO_MIMES = ['video/mp4', 'video/webm'];
 export interface ExtractRequest {
   code?: string;
   trailer_url?: string;
+  headless?: boolean;
 }
 export interface ExtractResponse {
   code: string;

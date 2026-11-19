@@ -15,6 +15,7 @@ export class ExtractService {
   async extractMovie(
     code?: string,
     trailerUrl?: string,
+    headless?: boolean,
   ): Promise<ExtractResponse> {
     try {
       const response = await fetch(`${this.scraperUrl}/extract`, {
@@ -25,6 +26,7 @@ export class ExtractService {
         body: JSON.stringify({
           code: code || null,
           trailer_url: trailerUrl || null,
+          headless: headless !== undefined ? headless : null,
         }),
       });
 
