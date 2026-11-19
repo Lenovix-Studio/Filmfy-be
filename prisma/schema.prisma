@@ -7,20 +7,20 @@ datasource db {
 }
 
 model Movies {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code            String          @unique @db.VarChar(50)
-  title           String          @db.Text
-  original_title  String?         @db.Text
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code            String           @unique @db.VarChar(50)
+  title           String           @db.Text
+  original_title  String?          @db.Text
   overview        String?
-  status          String?         @db.VarChar(50)
-  release_date    DateTime?       @db.Date
+  status          String?          @db.VarChar(50)
+  release_date    DateTime?        @db.Date
   runtime_minutes Int?
-  language        String?         @db.VarChar(30)
-  country         String?         @db.VarChar(100)
+  language        String?          @db.VarChar(30)
+  country         String?          @db.VarChar(100)
   tmdb_id         Int?
-  imdb_id         String?         @db.VarChar(30)
-  created_at      DateTime        @default(now()) @db.Timestamp(6)
-  updated_at      DateTime        @default(now()) @updatedAt @db.Timestamp(6)
+  imdb_id         String?          @db.VarChar(30)
+  created_at      DateTime         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime         @default(now()) @updatedAt @db.Timestamp(6)
   images          Images[]
   movie_casts     MovieCasts[]
   movie_directors MovieDirectors[]
@@ -35,16 +35,38 @@ model Movies {
 }
 
 model Casts {
-  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String       @db.VarChar(255)
-  display_name String?      @db.VarChar(255)
-  other_name   String?      @db.VarChar(255)
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String            @db.VarChar(255)
+  display_name String?           @db.VarChar(255)
+  other_name   String?           @db.VarChar(255)
   bio          String?
+  birth_date   DateTime?         @db.Date
+  birth_place  String?
+  height       Int?
+  body_notes   String?
+  bust         Int?
+  cup          String?           @db.VarChar(10)
+  waist        Int?
+  hip          Int?
+  agency       String?           @db.VarChar(255)
+  debut_date   DateTime?         @db.Date
   profile_path String?
   movie_casts  MovieCasts[]
   images       Images[]
+  social_media CastSocialMedia[]
 
   @@map("casts")
+}
+
+model CastSocialMedia {
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cast_id  String  @db.Uuid
+  platform String  @db.VarChar(50)
+  handle   String  @db.VarChar(255)
+  url      String?
+  cast     Casts   @relation(fields: [cast_id], references: [id], onDelete: Cascade)
+
+  @@map("cast_social_media")
 }
 
 model Directors {
@@ -219,7 +241,7 @@ model Favorites {
   movie_id   String   @unique @db.Uuid
   created_at DateTime @default(now()) @db.Timestamp(6)
 
-  movie      Movies   @relation(fields: [movie_id], references: [id], onDelete: Cascade)
+  movie Movies @relation(fields: [movie_id], references: [id], onDelete: Cascade)
 
   @@map("favorites")
 }

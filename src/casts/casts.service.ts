@@ -33,6 +33,7 @@ export class CastsService {
       where: { id },
       include: {
         images: true,
+        social_media: true,
         movie_casts: {
           include: {
             movie: {
@@ -62,11 +63,63 @@ export class CastsService {
       display_name?: string;
       other_name?: string;
       bio?: string;
+      birth_date?: string | null;
+      birth_place?: string | null;
+      height?: number | null;
+      body_notes?: string | null;
+      bust?: number | null;
+      cup?: string | null;
+      waist?: number | null;
+      hip?: number | null;
+      agency?: string | null;
+      debut_date?: string | null;
+      social_media?: {
+        platform: string;
+        handle: string;
+        url?: string | null;
+      }[];
     },
   ) {
-    return this.prisma.casts.update({
-      where: { id },
-      data,
+    const { social_media, birth_date, debut_date, ...rest } = data;
+
+    return this.prisma.$transaction(async (tx) => {
+      const updateData: Record<string, any> = { ...rest };
+      if (birth_date !== undefined) {
+        updateData.birth_date = birth_date ? new Date(birth_date) : null;
+      }
+      if (debut_date !== undefined) {
+        updateData.debut_date = debut_date ? new Date(debut_date) : null;
+      }
+
+      const updated = await tx.casts.update({
+        where: { id },
+        data: updateData,
+      });
+
+      if (social_media !== undefined) {
+        await tx.castSocialMedia.deleteMany({
+          where: { cast_id: id },
+        });
+
+        if (social_media.length > 0) {
+          const validSosmed = social_media
+            .filter((s) => s.platform?.trim() && s.handle?.trim())
+            .map((s) => ({
+              cast_id: id,
+              platform: s.platform.trim(),
+              handle: s.handle.trim(),
+              url: s.url?.trim() || null,
+            }));
+
+          if (validSosmed.length > 0) {
+            await tx.castSocialMedia.createMany({
+              data: validSosmed,
+            });
+          }
+        }
+      }
+
+      return updated;
     });
   }
 

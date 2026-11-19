@@ -29,6 +29,21 @@ export class CastsController {
       display_name?: string;
       other_name?: string;
       bio?: string;
+      birth_date?: string | null;
+      birth_place?: string | null;
+      height?: number | null;
+      body_notes?: string | null;
+      bust?: number | null;
+      cup?: string | null;
+      waist?: number | null;
+      hip?: number | null;
+      agency?: string | null;
+      debut_date?: string | null;
+      social_media?: {
+        platform: string;
+        handle: string;
+        url?: string | null;
+      }[];
     },
   ) {
     return this.castsService.update(id, data);
