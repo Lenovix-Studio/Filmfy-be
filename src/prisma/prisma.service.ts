@@ -14,7 +14,8 @@ const globalForPrisma = global as unknown as {
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
-{ [key: string]: any;
+{
+  [key: string]: any;
   constructor() {
     const connectionString = DATABASE_URL;
 
@@ -37,7 +38,14 @@ export class PrismaService
   }
 
   async onModuleInit() {
-    await (this as any).$connect();
+    try {
+      await (this as any).$connect();
+    } catch (error: any) {
+      console.error(
+        'WARNING: Gagal terhubung ke database saat startup:',
+        error.message,
+      );
+    }
   }
 
   async onModuleDestroy() {
