@@ -7,6 +7,7 @@ datasource db {
 }
 
 model Movies {
+  censorship_code String?          @db.VarChar(50)
   id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code            String           @unique @db.VarChar(50)
   title           String           @db.Text
@@ -54,6 +55,8 @@ model Casts {
   movie_casts  MovieCasts[]
   images       Images[]
   social_media CastSocialMedia[]
+  created_at   DateTime          @default(now()) @db.Timestamp(6)
+  updated_at   DateTime          @default(now()) @updatedAt @db.Timestamp(6)
 
   @@map("casts")
 }

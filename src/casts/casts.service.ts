@@ -25,6 +25,8 @@ export class CastsService {
       bio: c.bio,
       profile_path: c.profile_path,
       movies_count: c._count.movie_casts,
+      created_at: c.created_at,
+      updated_at: c.updated_at,
     }));
   }
 

@@ -114,4 +114,12 @@ export class CreateMovieDto {
   @Transform(({ value }) => normalizeStringArray(value))
   @IsArray()
   cast?: string[];
+
+  @ApiPropertyOptional({
+    example: 'UNCENSORED',
+    description: 'Censorship status code',
+  })
+  @IsOptional()
+  @IsString()
+  censorship_code?: string;
 }

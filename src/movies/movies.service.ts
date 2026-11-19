@@ -140,6 +140,7 @@ export class MoviesService {
             title: dto.title,
             overview: dto.overview,
             status: dto.status,
+            censorship_code: dto.censorship_code || null,
             country: dto.country,
             language: dto.language,
             release_date: dto.release_date
@@ -377,6 +378,8 @@ export class MoviesService {
       originalTitle: rawMovie.original_title,
       overview: rawMovie.overview,
       status: rawMovie.status,
+      censorship_code: rawMovie.censorship_code,
+      censorshipCode: rawMovie.censorship_code,
       releaseDate: rawMovie.release_date,
       runtimeMinutes: rawMovie.runtime_minutes,
       language: rawMovie.language,
@@ -558,6 +561,9 @@ export class MoviesService {
           code: dto.code,
           overview: dto.overview,
           status: dto.status,
+          ...(dto.censorship_code !== undefined
+            ? { censorship_code: dto.censorship_code || null }
+            : {}),
         },
       }),
     );
